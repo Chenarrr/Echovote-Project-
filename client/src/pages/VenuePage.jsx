@@ -1,23 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
-import { castVote } from '../services/api';
+import { castVote, getVenueInfo } from '../services/api';
 import useVenue from '../hooks/useVenue';
 import SearchBar from '../components/SearchBar';
 import Leaderboard from '../components/Leaderboard';
 import NowPlaying from '../components/NowPlaying';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const VenuePage = () => {
   const { id: venueId } = useParams();
   const { queue, nowPlaying, loading, refetch } = useVenue(venueId);
   const [fingerprint, setFingerprint] = useState(null);
   const [votedSongs, setVotedSongs] = useState(new Set());
+  const [venue, setVenue] = useState(null);
 
   useEffect(() => {
     FingerprintJS.load().then((fp) => fp.get()).then((result) => {
       setFingerprint(result.visitorId);
     });
   }, []);
+
+  useEffect(() => {
+    if (venueId) {
+      getVenueInfo(venueId).then(({ data }) => setVenue(data)).catch(() => {});
+    }
+  }, [venueId]);
 
   const handleVote = useCallback(async (queueEntryId, songId) => {
     if (!fingerprint || votedSongs.has(queueEntryId)) return;
@@ -33,11 +42,28 @@ const VenuePage = () => {
     <div className="min-h-screen bg-surface-900 pb-20">
       <header className="px-4 pt-6 pb-5 border-b border-surface-700/50">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-surface-100 tracking-tight">EchoVote</h1>
-            <p className="text-surface-400 text-xs mt-0.5">Vote for the next song</p>
+          <div className="flex items-center gap-3">
+            {venue?.image ? (
+              <img
+                src={`${API_URL}${venue.image}`}
+                alt={venue.name}
+                className="w-9 h-9 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="w-9 h-9 bg-accent/10 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-accent">
+                  <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
+                </svg>
+              </div>
+            )}
+            <div>
+              <h1 className="text-base font-semibold text-surface-100 tracking-tight">
+                {venue?.name || 'EchoVote'}
+              </h1>
+              <p className="text-surface-400 text-xs mt-0.5">Vote for the next song</p>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 text-accent">
+          <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
             <span className="text-xs text-surface-400 font-medium">Live</span>
           </div>

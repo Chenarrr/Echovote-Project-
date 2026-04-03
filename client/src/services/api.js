@@ -21,6 +21,10 @@ export const adminRegister = (email, password, venueName) =>
   api.post('/api/auth/register', { email, password, venueName });
 export const verify2FASetup = (email, token) =>
   api.post('/api/auth/verify-2fa-setup', { email, token });
+export const getVenueInfo = (venueId) => api.get(`/api/venue/${venueId}`);
+export const getAdminVenue = () => api.get('/api/admin/venue');
+export const uploadVenueImage = (formData) =>
+  api.post('/api/admin/venue-image', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const adminSkip = () => api.post('/api/admin/skip');
 export const adminPause = () => api.post('/api/admin/pause');
 export const adminFilter = () => api.post('/api/admin/filter');

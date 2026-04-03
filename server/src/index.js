@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -28,12 +29,24 @@ registerHandlers(io);
 
 app.use(cors({ origin: CLIENT_ORIGIN }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/qr', qrRoutes);
+
+const Venue = require('./models/Venue');
+app.get('/api/venue/:venueId', async (req, res) => {
+  try {
+    const venue = await Venue.findById(req.params.venueId).select('name image');
+    if (!venue) return res.status(404).json({ error: 'Venue not found' });
+    res.json(venue);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 

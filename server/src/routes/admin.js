@@ -1,9 +1,20 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const authMiddleware = require('../middleware/auth');
 const PlaybackState = require('../models/PlaybackState');
 const ActiveQueue = require('../models/ActiveQueue');
 const Venue = require('../models/Venue');
 const { emitToVenue } = require('../services/socketManager');
+
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../../uploads'),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `venue-${Date.now()}${ext}`);
+  },
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const router = express.Router();
 
@@ -80,6 +91,29 @@ router.post('/seed', async (req, res) => {
       { new: true }
     );
     res.json({ weeklySeeds: venue.settings.weeklySeeds });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/venue-image', upload.single('image'), async (req, res) => {
+  try {
+    const { venueId } = req.admin;
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+    const imagePath = `/uploads/${req.file.filename}`;
+    const venue = await Venue.findByIdAndUpdate(venueId, { image: imagePath }, { new: true });
+    res.json({ image: venue.image });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/venue', async (req, res) => {
+  try {
+    const { venueId } = req.admin;
+    const venue = await Venue.findById(venueId);
+    if (!venue) return res.status(404).json({ error: 'Venue not found' });
+    res.json(venue);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminSkip, adminPause, adminFilter, adminSeed } from '../services/api';
+import { adminSkip, adminPause, adminFilter, adminSeed, getAdminVenue, uploadVenueImage } from '../services/api';
 import useVenue from '../hooks/useVenue';
 import QRDisplay from '../components/QRDisplay';
 import useSocket from '../hooks/useSocket';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -11,8 +13,11 @@ const AdminDashboard = () => {
   const { queue, nowPlaying, loading } = useVenue(venueId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [seedInput, setSeedInput] = useState('');
+  const [venue, setVenue] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const playerRef = useRef(null);
   const playerInstanceRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useSocket(venueId, {
     playback_state: ({ isPlaying: p }) => setIsPlaying(p),
@@ -25,6 +30,8 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!venueId) { navigate('/admin/login'); return; }
+
+    getAdminVenue().then(({ data }) => setVenue(data)).catch(() => {});
 
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
@@ -46,6 +53,22 @@ const AdminDashboard = () => {
       });
     };
   }, []);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await uploadVenueImage(formData);
+      setVenue((prev) => ({ ...prev, image: data.image }));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('echovote_token');
@@ -76,14 +99,20 @@ const AdminDashboard = () => {
       <header className="border-b border-surface-700/50 px-4 lg:px-8">
         <div className="max-w-6xl mx-auto h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-accent">
-                <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
-              </svg>
+            {venue?.image ? (
+              <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-7 h-7 rounded-lg object-cover" />
+            ) : (
+              <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-accent">
+                  <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
+                </svg>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-surface-100">{venue?.name || 'EchoVote'}</span>
+              <span className="text-surface-600 text-xs">|</span>
+              <span className="text-xs text-surface-400">Dashboard</span>
             </div>
-            <span className="text-sm font-semibold text-surface-100">EchoVote</span>
-            <span className="text-surface-600 text-xs">|</span>
-            <span className="text-xs text-surface-400">Dashboard</span>
           </div>
           <button onClick={handleLogout} className="text-xs text-surface-400 hover:text-surface-200 transition-colors font-medium">
             Sign out
@@ -92,6 +121,39 @@ const AdminDashboard = () => {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
+        {/* Venue Image */}
+        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
+          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Venue Photo</h2>
+          <div className="flex items-center gap-4">
+            {venue?.image ? (
+              <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-20 h-20 rounded-lg object-cover" />
+            ) : (
+              <div className="w-20 h-20 bg-surface-800 rounded-lg flex items-center justify-center border border-dashed border-surface-600">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-surface-500">
+                  <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="bg-surface-700/60 hover:bg-surface-700 text-surface-200 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {uploading ? 'Uploading...' : venue?.image ? 'Change photo' : 'Upload photo'}
+              </button>
+              <p className="text-xs text-surface-500 mt-1.5">JPG or PNG, max 5MB. Shown to guests on the voting page.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Player + QR */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           <div className="lg:col-span-2 bg-surface-800/60 border border-surface-700/50 rounded-lg overflow-hidden" style={{ minHeight: 280 }}>
