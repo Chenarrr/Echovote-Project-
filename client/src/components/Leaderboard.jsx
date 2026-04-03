@@ -6,7 +6,7 @@ const Leaderboard = ({ queue, votedSongs, onVote }) => {
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-3xl mb-2">🎵</p>
-        <p className="text-sm">No songs in the queue yet.</p>
+        <p className="text-sm">No, songs in the queue yet.</p>
         <p className="text-sm">Search above to add one!</p>
       </div>
     );
