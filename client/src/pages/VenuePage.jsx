@@ -30,20 +30,26 @@ const VenuePage = () => {
   }, [fingerprint, votedSongs]);
 
   return (
-    <div className="min-h-screen bg-brand-dark pb-24">
-      <header className="px-4 pt-8 pb-4">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-brand-purple to-brand-pink bg-clip-text text-transparent">
-          EchoVote
-        </h1>
-        <p className="text-gray-400 text-sm mt-1">Vote for the next song</p>
+    <div className="min-h-screen bg-surface-900 pb-20">
+      <header className="px-4 pt-6 pb-5 border-b border-surface-700/50">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-surface-100 tracking-tight">EchoVote</h1>
+            <p className="text-surface-400 text-xs mt-0.5">Vote for the next song</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-accent">
+            <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
+            <span className="text-xs text-surface-400 font-medium">Live</span>
+          </div>
+        </div>
       </header>
 
-      <div className="px-4">
+      <div className="px-4 pt-5 max-w-lg mx-auto">
         <SearchBar venueId={venueId} onSongAdded={refetch} />
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-2 border-brand-purple border-t-transparent rounded-full animate-spin" />
+          <div className="flex justify-center py-16">
+            <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
           </div>
         ) : (
           <Leaderboard queue={queue} votedSongs={votedSongs} onVote={handleVote} />

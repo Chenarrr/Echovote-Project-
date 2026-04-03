@@ -36,39 +36,46 @@ const SearchBar = ({ venueId, onSongAdded }) => {
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-5">
       <form onSubmit={handleSearch} className="flex gap-2">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search for a song..."
-          className="flex-1 bg-brand-card border border-brand-border rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-purple"
-        />
+        <div className="flex-1 relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500">
+            <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+          </svg>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for a song..."
+            className="w-full bg-surface-800 border border-surface-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
+          />
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="bg-brand-purple hover:bg-violet-600 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60"
+          className="bg-accent hover:bg-accent-hover text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
         >
-          {loading ? '...' : 'Search'}
+          {loading ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : 'Search'}
         </button>
       </form>
 
       {results.length > 0 && (
-        <div className="mt-2 bg-brand-card border border-brand-border rounded-xl overflow-hidden">
+        <div className="mt-2 bg-surface-800 border border-surface-700 rounded-lg overflow-hidden divide-y divide-surface-700/50">
           {results.map((song) => (
-            <div key={song.youtubeId} className="flex items-center gap-3 p-3 border-b border-brand-border last:border-0">
+            <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-surface-700/30 transition-colors">
               <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
-                <p className="text-xs text-gray-400 truncate">{song.artist}</p>
+                <p className="text-sm font-medium text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+                <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
               </div>
               <button
                 onClick={() => handleAdd(song)}
                 disabled={adding === song.youtubeId}
-                className="text-xs bg-brand-purple hover:bg-violet-600 text-white rounded-lg px-3 py-1.5 font-semibold transition-colors disabled:opacity-60 flex-shrink-0"
+                className="text-xs bg-accent/10 text-accent hover:bg-accent/20 rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50 flex-shrink-0"
               >
-                {adding === song.youtubeId ? '...' : '+ Add'}
+                {adding === song.youtubeId ? '...' : 'Add to queue'}
               </button>
             </div>
           ))}

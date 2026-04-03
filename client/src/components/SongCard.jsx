@@ -6,16 +6,16 @@ const SongCard = ({ entry, rank, voted, onVote }) => {
   const voteCount = entry.voteCount ?? 0;
 
   return (
-    <div className="flex items-center gap-3 bg-brand-card border border-brand-border rounded-xl p-3">
-      <span className="text-gray-500 text-sm font-bold w-5 text-center flex-shrink-0">{rank}</span>
+    <div className="flex items-center gap-3 bg-surface-800/60 border border-surface-700/50 rounded-lg p-3 hover:bg-surface-800 transition-colors">
+      <span className="text-surface-500 text-xs font-semibold w-5 text-center flex-shrink-0 tabular-nums">{rank}</span>
       <img
         src={song.thumbnail}
         alt={song.title}
-        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+        className="w-11 h-11 rounded object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
-        <p className="text-xs text-gray-400 truncate">{song.artist}</p>
+        <p className="font-medium text-sm text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+        <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
       </div>
       <VoteButton count={voteCount} voted={voted} onClick={() => onVote(entry._id, song._id)} />
     </div>
