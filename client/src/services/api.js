@@ -15,9 +15,12 @@ export const getQueue = (venueId) => api.get(`/api/songs/${venueId}`);
 export const addSong = (venueId, song) => api.post(`/api/songs/${venueId}`, song);
 export const castVote = (songId, visitorFingerprint) =>
   api.post(`/api/votes/${songId}`, { visitorFingerprint });
-export const adminLogin = (email, password) => api.post('/api/auth/login', { email, password });
+export const adminLogin = (email, password, totpCode) =>
+  api.post('/api/auth/login', { email, password, totpCode });
 export const adminRegister = (email, password, venueName) =>
   api.post('/api/auth/register', { email, password, venueName });
+export const verify2FASetup = (email, token) =>
+  api.post('/api/auth/verify-2fa-setup', { email, token });
 export const adminSkip = () => api.post('/api/admin/skip');
 export const adminPause = () => api.post('/api/admin/pause');
 export const adminFilter = () => api.post('/api/admin/filter');

@@ -1,9 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 const Admin = require('../models/Admin');
 const Venue = require('../models/Venue');
 const { JWT_SECRET } = require('../config/env');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -22,11 +25,64 @@ router.post('/register', async (req, res) => {
     const venue = await Venue.create({ name: venueName, qrCodeSecret });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const admin = await Admin.create({ email, passwordHash, venueId: venue._id });
 
-    const token = jwt.sign({ adminId: admin._id, venueId: venue._id }, JWT_SECRET, { expiresIn: '7d' });
+    const secret = speakeasy.generateSecret({
+      name: `EchoVote (${email})`,
+      issuer: 'EchoVote',
+    });
 
-    res.status(201).json({ token, venueId: venue._id, venueName: venue.name });
+    const admin = await Admin.create({
+      email,
+      passwordHash,
+      venueId: venue._id,
+      twoFactorSecret: secret.base32,
+      twoFactorEnabled: false,
+    });
+
+    const qrDataUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+    res.status(201).json({
+      setupRequired: true,
+      qrCode: qrDataUrl,
+      secret: secret.base32,
+      email: admin.email,
+      venueId: venue._id,
+      venueName: venue.name,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/verify-2fa-setup', async (req, res) => {
+  try {
+    const { email, token: totpToken } = req.body;
+    if (!email || !totpToken) {
+      return res.status(400).json({ error: 'email and token are required' });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (!admin || !admin.twoFactorSecret) {
+      return res.status(400).json({ error: 'No 2FA setup found' });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: admin.twoFactorSecret,
+      encoding: 'base32',
+      token: totpToken,
+      window: 1,
+    });
+
+    if (!verified) {
+      return res.status(401).json({ error: 'Invalid code. Try again.' });
+    }
+
+    admin.twoFactorEnabled = true;
+    await admin.save();
+
+    const jwtToken = jwt.sign({ adminId: admin._id, venueId: admin.venueId }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({ token: jwtToken, venueId: admin.venueId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -34,7 +90,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, totpCode } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'email and password required' });
 
     const admin = await Admin.findOne({ email });
@@ -42,6 +98,23 @@ router.post('/login', async (req, res) => {
 
     const valid = await bcrypt.compare(password, admin.passwordHash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+
+    if (admin.twoFactorEnabled) {
+      if (!totpCode) {
+        return res.json({ requires2FA: true });
+      }
+
+      const verified = speakeasy.totp.verify({
+        secret: admin.twoFactorSecret,
+        encoding: 'base32',
+        token: totpCode,
+        window: 1,
+      });
+
+      if (!verified) {
+        return res.status(401).json({ error: 'Invalid 2FA code' });
+      }
+    }
 
     const token = jwt.sign({ adminId: admin._id, venueId: admin.venueId }, JWT_SECRET, { expiresIn: '7d' });
 
