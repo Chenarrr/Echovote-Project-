@@ -60,7 +60,7 @@ const SearchBar = ({ venueId, onSongAdded }) => {
             <div key={song.youtubeId} className="flex items-center gap-3 p-3 border-b border-brand-border last:border-0">
               <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{song.title}</p>
+                <p className="text-sm font-semibold truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
                 <p className="text-xs text-gray-400 truncate">{song.artist}</p>
               </div>
               <button

@@ -134,7 +134,7 @@ const AdminDashboard = () => {
                     <span className="text-gray-500 text-sm font-bold w-5 text-center">{i + 1}</span>
                     <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{song.title}</p>
+                      <p className="text-sm font-semibold truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
                       <p className="text-xs text-gray-400 truncate">{song.artist}</p>
                     </div>
                     <span className="text-brand-purple text-sm font-bold">{entry.voteCount} votes</span>

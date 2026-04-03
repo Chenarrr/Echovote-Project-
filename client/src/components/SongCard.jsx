@@ -14,7 +14,7 @@ const SongCard = ({ entry, rank, voted, onVote }) => {
         className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{song.title}</p>
+        <p className="font-semibold text-sm truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
         <p className="text-xs text-gray-400 truncate">{song.artist}</p>
       </div>
       <VoteButton count={voteCount} voted={voted} onClick={() => onVote(entry._id, song._id)} />
