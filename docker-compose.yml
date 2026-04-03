@@ -1,0 +1,55 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: echovote_mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - echovote_net
+
+  server:
+    build: ./server
+    container_name: echovote_server
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGO_URI=mongodb://mongo:27017/echovote
+      - JWT_SECRET=${JWT_SECRET}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - CLIENT_ORIGIN=http://localhost:5173
+    depends_on:
+      - mongo
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - echovote_net
+
+  client:
+    build: ./client
+    container_name: echovote_client
+    ports:
+      - '5173:5173'
+    environment:
+      - VITE_API_URL=http://localhost:3001
+      - VITE_SOCKET_URL=http://localhost:3001
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - echovote_net
+
+volumes:
+  mongo_data:
+
+networks:
+  echovote_net:
+    driver: bridge
