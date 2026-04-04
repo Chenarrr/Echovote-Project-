@@ -274,6 +274,107 @@ Admins can upload a venue photo (JPG/PNG, max 5MB) from the dashboard.
 
 ---
 
+## Database Management
+
+You can manage the database directly via the MongoDB shell inside Docker.
+
+### Connect to the database
+
+```bash
+docker exec -it echovote_mongo mongosh echovote
+```
+
+### View data
+
+```js
+// List all admins
+db.admins.find().pretty()
+
+// List all venues
+db.venues.find().pretty()
+
+// List all songs in a venue's queue
+db.activequeues.find({ venueId: ObjectId("VENUE_ID_HERE") }).pretty()
+
+// List all songs
+db.songs.find().pretty()
+```
+
+### Delete data
+
+```js
+// Delete a specific admin by email
+db.admins.deleteOne({ email: "user@example.com" })
+
+// Delete a specific venue by name
+db.venues.deleteOne({ name: "My Venue" })
+
+// Delete all admins
+db.admins.deleteMany({})
+
+// Delete all venues
+db.venues.deleteMany({})
+
+// Clear all queues (remove all songs from all venues)
+db.activequeues.deleteMany({})
+
+// Full reset (wipe everything)
+db.admins.deleteMany({})
+db.venues.deleteMany({})
+db.songs.deleteMany({})
+db.activequeues.deleteMany({})
+db.playbackstates.deleteMany({})
+```
+
+### Edit data
+
+```js
+// Change a venue's name
+db.venues.updateOne(
+  { _id: ObjectId("VENUE_ID_HERE") },
+  { $set: { name: "New Venue Name" } }
+)
+
+// Change an admin's email
+db.admins.updateOne(
+  { email: "old@example.com" },
+  { $set: { email: "new@example.com" } }
+)
+
+// Disable 2FA for an admin (if locked out)
+db.admins.updateOne(
+  { email: "user@example.com" },
+  { $set: { twoFactorEnabled: false, twoFactorSecret: null } }
+)
+
+// Toggle explicit filter for a venue
+db.venues.updateOne(
+  { _id: ObjectId("VENUE_ID_HERE") },
+  { $set: { "settings.explicitFilter": true } }
+)
+```
+
+### Useful queries
+
+```js
+// Count total votes across all queues
+db.activequeues.aggregate([{ $group: { _id: null, total: { $sum: "$voteCount" } } }])
+
+// Find the most voted song
+db.activequeues.find().sort({ voteCount: -1 }).limit(1).pretty()
+
+// See which admin owns which venue
+db.admins.aggregate([
+  { $lookup: { from: "venues", localField: "venueId", foreignField: "_id", as: "venue" } },
+  { $unwind: "$venue" },
+  { $project: { email: 1, "venue.name": 1 } }
+])
+```
+
+> **Tip:** You can also use [MongoDB Compass](https://www.mongodb.com/products/compass) (GUI) — connect to `mongodb://localhost:27017` and browse/edit the `echovote` database visually.
+
+---
+
 ## Database Schemas
 
 ### Venue
