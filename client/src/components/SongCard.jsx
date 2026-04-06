@@ -6,22 +6,22 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
   const voteCount = entry.voteCount ?? 0;
 
   return (
-    <div className="flex items-center gap-3 bg-surface-800/60 border border-surface-700/50 rounded-lg p-3 hover:bg-surface-800 transition-colors">
-      <span className="text-surface-500 text-xs font-semibold w-5 text-center flex-shrink-0 tabular-nums">{rank}</span>
+    <div className="flex items-center gap-3 glass rounded-glass p-3 hover:bg-white/[0.09] transition-all">
+      <span className="text-white/30 text-xs font-semibold w-5 text-center flex-shrink-0 tabular-nums">{rank}</span>
       <img
         src={song.thumbnail}
         alt={song.title}
-        className="w-11 h-11 rounded object-cover flex-shrink-0"
+        className="w-11 h-11 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10"
       />
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm text-surface-100 truncate">{song.title}</p>
-        <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
+        <p className="font-medium text-sm text-white truncate">{song.title}</p>
+        <p className="text-xs text-white/40 truncate mt-0.5">{song.artist}</p>
       </div>
       <VoteButton count={voteCount} voted={voted} onClick={() => onVote(entry._id, song._id)} onUnvote={() => onUnvote(entry._id, song._id)} />
       {canDelete && (
         <button
           onClick={() => onDelete(song._id)}
-          className="text-surface-500 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+          className="text-white/30 hover:text-red-400 transition-colors p-1 flex-shrink-0"
           title="Remove your song"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">

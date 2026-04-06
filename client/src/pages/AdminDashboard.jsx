@@ -189,231 +189,240 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-900">
-      {/* Top bar */}
-      <header className="border-b border-surface-700/50 px-4 lg:px-8">
-        <div className="max-w-6xl mx-auto h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {venue?.image ? (
-              <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-7 h-7 rounded-lg object-cover" />
-            ) : (
-              <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-accent">
-                  <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
-                </svg>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-surface-100">{venue?.name || 'EchoVote'}</span>
-              <span className="text-surface-600 text-xs">|</span>
-              <span className="text-xs text-surface-400">Dashboard</span>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="text-xs text-surface-400 hover:text-surface-200 transition-colors font-medium">
-            Sign out
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen relative">
+      {/* Ambient background */}
+      <div className="ambient-bg">
+        <div className="ambient-blob ambient-blob-1" />
+        <div className="ambient-blob ambient-blob-2" />
+        <div className="ambient-blob ambient-blob-3" />
+      </div>
 
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
-        {/* Venue Image */}
-        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Venue Photo</h2>
-          <div className="flex items-center gap-4">
-            {venue?.image ? (
-              <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-20 h-20 rounded-lg object-cover" />
-            ) : (
-              <div className="w-20 h-20 bg-surface-800 rounded-lg flex items-center justify-center border border-dashed border-surface-600">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-surface-500">
-                  <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-            )}
-            <div>
-              <input
-                ref={fileInputRef}
-                id="venue-image-upload"
-                name="venue-image-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="bg-surface-700/60 hover:bg-surface-700 text-surface-200 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {uploading ? 'Uploading...' : venue?.image ? 'Change photo' : 'Upload photo'}
-              </button>
-              <p className="text-xs text-surface-500 mt-1.5">JPG or PNG, max 5MB. Shown to guests on the voting page.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Player + QR */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <div className="lg:col-span-2 bg-surface-800/60 border border-surface-700/50 rounded-lg overflow-hidden" style={{ minHeight: 280 }}>
-            <div ref={playerRef} className="w-full h-full" style={{ minHeight: 280 }} />
-          </div>
-          <QRDisplay venueId={venueId} />
-        </div>
-
-        {/* Controls */}
-        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Playback Controls</h2>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={handleSkip} className="inline-flex items-center gap-2 bg-surface-700/60 hover:bg-surface-700 text-surface-200 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path d="M15.25 5a.75.75 0 01.75.75v8.5a.75.75 0 01-1.5 0v-8.5a.75.75 0 01.75-.75zm-10.324.614a.75.75 0 011.074.066L10.5 10l-4.5 4.32a.75.75 0 11-1.04-1.08L8.42 10 4.96 6.76a.75.75 0 01.066-1.074l-.1-.072z" />
-              </svg>
-              Skip track
-            </button>
-            <button onClick={handlePause} className="inline-flex items-center gap-2 bg-surface-700/60 hover:bg-surface-700 text-surface-200 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-              {isPlaying ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                  <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />
-                </svg>
+      <div className="relative z-10">
+        {/* Top bar */}
+        <header className="px-4 lg:px-8 pt-4">
+          <div className="max-w-6xl mx-auto glass-heavy rounded-glass-lg h-14 flex items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              {venue?.image ? (
+                <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-7 h-7 rounded-lg object-cover ring-1 ring-white/10" />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                  <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                </svg>
+                <div className="w-7 h-7 bg-accent/15 rounded-lg flex items-center justify-center border border-accent/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-accent">
+                    <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
+                  </svg>
+                </div>
               )}
-              {isPlaying ? 'Pause' : 'Resume'}
-            </button>
-            <button onClick={handleFilter} className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${explicitFilter ? 'bg-accent/20 border border-accent/40 text-accent' : 'bg-surface-700/60 hover:bg-surface-700 text-surface-200'}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z" />
-              </svg>
-              Explicit filter: {explicitFilter ? 'ON' : 'OFF'}
-            </button>
-          </div>
-          {(reactions.fire > 0 || reactions.meh > 0 || reactions.dislike > 0) && (
-            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-surface-700/50">
-              <span className="text-xs text-surface-400 font-medium">Audience mood:</span>
-              <div className="flex gap-3">
-                <span className="text-sm">{'\uD83D\uDD25'} <span className="text-xs text-surface-300 font-medium">{reactions.fire}</span></span>
-                <span className="text-sm">{'\uD83D\uDE10'} <span className="text-xs text-surface-300 font-medium">{reactions.meh}</span></span>
-                <span className="text-sm">{'\uD83D\uDC4E'} <span className="text-xs text-surface-300 font-medium">{reactions.dislike}</span></span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white">{venue?.name || 'EchoVote'}</span>
+                <span className="text-white/15 text-xs">|</span>
+                <span className="text-xs text-white/40">Dashboard</span>
               </div>
             </div>
-          )}
-        </div>
+            <button onClick={handleLogout} className="text-xs text-white/40 hover:text-white/70 transition-colors font-medium">
+              Sign out
+            </button>
+          </div>
+        </header>
 
-        {/* Live Queue */}
-        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider">Live Queue</h2>
-            {queue.length > 0 && (
-              <span className="text-xs text-surface-500">{queue.length} {queue.length === 1 ? 'track' : 'tracks'}</span>
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
+          {/* Venue Image */}
+          <div className="glass rounded-glass-lg p-4 mb-6">
+            <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Venue Photo</h2>
+            <div className="flex items-center gap-4">
+              {venue?.image ? (
+                <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-20 h-20 rounded-xl object-cover ring-1 ring-white/10" />
+              ) : (
+                <div className="w-20 h-20 glass-subtle rounded-xl flex items-center justify-center border border-dashed border-white/15">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white/20">
+                    <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+              <div>
+                <input
+                  ref={fileInputRef}
+                  id="venue-image-upload"
+                  name="venue-image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="glass-subtle hover:bg-white/[0.08] text-white/70 rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {uploading ? 'Uploading...' : venue?.image ? 'Change photo' : 'Upload photo'}
+                </button>
+                <p className="text-xs text-white/25 mt-1.5">JPG or PNG, max 5MB. Shown to guests on the voting page.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Player + QR */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div className="lg:col-span-2 glass rounded-glass-lg overflow-hidden" style={{ minHeight: 280 }}>
+              <div ref={playerRef} className="w-full h-full" style={{ minHeight: 280 }} />
+            </div>
+            <QRDisplay venueId={venueId} />
+          </div>
+
+          {/* Controls */}
+          <div className="glass rounded-glass-lg p-4 mb-6">
+            <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Playback Controls</h2>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={handleSkip} className="inline-flex items-center gap-2 glass-subtle hover:bg-white/[0.08] text-white/70 rounded-xl px-4 py-2 text-sm font-medium transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path d="M15.25 5a.75.75 0 01.75.75v8.5a.75.75 0 01-1.5 0v-8.5a.75.75 0 01.75-.75zm-10.324.614a.75.75 0 011.074.066L10.5 10l-4.5 4.32a.75.75 0 11-1.04-1.08L8.42 10 4.96 6.76a.75.75 0 01.066-1.074l-.1-.072z" />
+                </svg>
+                Skip track
+              </button>
+              <button onClick={handlePause} className="inline-flex items-center gap-2 glass-subtle hover:bg-white/[0.08] text-white/70 rounded-xl px-4 py-2 text-sm font-medium transition-colors">
+                {isPlaying ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                  </svg>
+                )}
+                {isPlaying ? 'Pause' : 'Resume'}
+              </button>
+              <button onClick={handleFilter} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${explicitFilter ? 'glass-button text-accent' : 'glass-subtle hover:bg-white/[0.08] text-white/70'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z" />
+                </svg>
+                Explicit filter: {explicitFilter ? 'ON' : 'OFF'}
+              </button>
+            </div>
+            {(reactions.fire > 0 || reactions.meh > 0 || reactions.dislike > 0) && (
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.06]">
+                <span className="text-xs text-white/40 font-medium">Audience mood:</span>
+                <div className="flex gap-3">
+                  <span className="text-sm">{'\uD83D\uDD25'} <span className="text-xs text-white/60 font-medium">{reactions.fire}</span></span>
+                  <span className="text-sm">{'\uD83D\uDE10'} <span className="text-xs text-white/60 font-medium">{reactions.meh}</span></span>
+                  <span className="text-sm">{'\uD83D\uDC4E'} <span className="text-xs text-white/60 font-medium">{reactions.dislike}</span></span>
+                </div>
+              </div>
             )}
           </div>
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+
+          {/* Live Queue */}
+          <div className="glass rounded-glass-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Live Queue</h2>
+              {queue.length > 0 && (
+                <span className="text-xs text-white/25">{queue.length} {queue.length === 1 ? 'track' : 'tracks'}</span>
+              )}
             </div>
-          ) : queue.length === 0 ? (
-            <p className="text-surface-500 text-sm text-center py-10">No tracks in queue. Guests can add songs from the venue page.</p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {queue.map((entry, i) => {
-                const song = entry.songId || {};
-                return (
-                  <div key={entry._id} className="flex items-center gap-3 bg-surface-800/80 rounded-lg p-3 hover:bg-surface-700/50 transition-colors">
-                    <span className="text-surface-500 text-xs font-semibold w-5 text-center tabular-nums">{i + 1}</span>
-                    <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+            {loading ? (
+              <div className="flex justify-center py-10">
+                <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+              </div>
+            ) : queue.length === 0 ? (
+              <p className="text-white/30 text-sm text-center py-10">No tracks in queue. Guests can add songs from the venue page.</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {queue.map((entry, i) => {
+                  const song = entry.songId || {};
+                  return (
+                    <div key={entry._id} className="flex items-center gap-3 glass-subtle rounded-xl p-3 hover:bg-white/[0.06] transition-colors">
+                      <span className="text-white/25 text-xs font-semibold w-5 text-center tabular-nums">{i + 1}</span>
+                      <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{song.title}</p>
+                        <p className="text-xs text-white/40 truncate mt-0.5">{song.artist}</p>
+                      </div>
+                      <span className="text-accent text-xs font-semibold tabular-nums">{entry.voteCount}</span>
+                      <button
+                        onClick={() => handleDeleteQueueSong(song._id)}
+                        className="text-white/25 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+                        title="Remove from queue"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Admin Search */}
+          <div className="glass rounded-glass-lg p-4 mb-6">
+            <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Play a Song</h2>
+            <form onSubmit={handleAdminSearch} className="flex gap-2">
+              <div className="flex-1 relative">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30">
+                  <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+                </svg>
+                <input
+                  id="admin-song-search"
+                  name="admin-song-search"
+                  type="text"
+                  value={adminQuery}
+                  onChange={(e) => setAdminQuery(e.target.value)}
+                  placeholder="Search for a song..."
+                  autoComplete="off"
+                  className="w-full glass-input rounded-glass pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/30"
+                />
+              </div>
+              <button type="submit" disabled={adminSearching} className="glass-button text-accent rounded-glass px-5 py-2.5 text-sm font-medium disabled:opacity-50">
+                {adminSearching ? '...' : 'Search'}
+              </button>
+            </form>
+            {adminResults.length > 0 && (
+              <div className="mt-2 glass rounded-glass overflow-hidden divide-y divide-white/[0.06]">
+                {adminResults.map((song) => (
+                  <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-white/[0.05] transition-colors">
+                    <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-surface-100 truncate">{song.title}</p>
-                      <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-white truncate">{song.title}</p>
+                        {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-white/10 text-white/50 rounded px-1 py-0.5">E</span>}
+                      </div>
+                      <p className="text-xs text-white/40 truncate mt-0.5">{song.artist}</p>
                     </div>
-                    <span className="text-accent text-xs font-semibold tabular-nums">{entry.voteCount}</span>
-                    <button
-                      onClick={() => handleDeleteQueueSong(song._id)}
-                      className="text-surface-500 hover:text-red-400 transition-colors p-1 flex-shrink-0"
-                      title="Remove from queue"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Admin Search */}
-        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Play a Song</h2>
-          <form onSubmit={handleAdminSearch} className="flex gap-2">
-            <div className="flex-1 relative">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500">
-                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
-              </svg>
-              <input
-                id="admin-song-search"
-                name="admin-song-search"
-                type="text"
-                value={adminQuery}
-                onChange={(e) => setAdminQuery(e.target.value)}
-                placeholder="Search for a song..."
-                autoComplete="off"
-                className="w-full bg-surface-800 border border-surface-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
-              />
-            </div>
-            <button type="submit" disabled={adminSearching} className="bg-accent hover:bg-accent-hover text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50">
-              {adminSearching ? '...' : 'Search'}
-            </button>
-          </form>
-          {adminResults.length > 0 && (
-            <div className="mt-2 bg-surface-800 border border-surface-700 rounded-lg overflow-hidden divide-y divide-surface-700/50">
-              {adminResults.map((song) => (
-                <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-surface-700/30 transition-colors">
-                  <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-surface-100 truncate">{song.title}</p>
-                      {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-surface-600 text-surface-300 rounded px-1 py-0.5">E</span>}
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handlePlayNow(song)}
+                        disabled={adminAdding === song.youtubeId}
+                        className="text-xs glass-button text-accent rounded-lg px-3 py-1.5 font-medium disabled:opacity-50"
+                      >
+                        Play now
+                      </button>
+                      <button
+                        onClick={() => handleAddToQueue(song)}
+                        disabled={adminAdding === song.youtubeId}
+                        className="text-xs glass-subtle hover:bg-white/[0.08] text-white/60 rounded-lg px-3 py-1.5 font-medium disabled:opacity-50"
+                      >
+                        Queue
+                      </button>
                     </div>
-                    <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
                   </div>
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => handlePlayNow(song)}
-                      disabled={adminAdding === song.youtubeId}
-                      className="text-xs bg-accent text-white hover:bg-accent-hover rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50"
-                    >
-                      Play now
-                    </button>
-                    <button
-                      onClick={() => handleAddToQueue(song)}
-                      disabled={adminAdding === song.youtubeId}
-                      className="text-xs bg-surface-700 text-surface-200 hover:bg-surface-600 rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50"
-                    >
-                      Queue
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* Danger Zone */}
-        <div className="bg-surface-800/60 border border-red-900/40 rounded-lg p-4">
-          <h2 className="text-xs font-semibold text-red-400/80 uppercase tracking-wider mb-3">Danger Zone</h2>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-surface-200">Delete this venue</p>
-              <p className="text-xs text-surface-500 mt-0.5">Permanently deletes the venue, your account, all songs, and the queue.</p>
+          {/* Danger Zone */}
+          <div className="glass rounded-glass-lg p-4 border-red-900/30" style={{ borderColor: 'rgba(127,29,29,0.3)' }}>
+            <h2 className="text-xs font-semibold text-red-400/80 uppercase tracking-wider mb-3">Danger Zone</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white/80">Delete this venue</p>
+                <p className="text-xs text-white/30 mt-0.5">Permanently deletes the venue, your account, all songs, and the queue.</p>
+              </div>
+              <button
+                onClick={handleDeleteVenue}
+                className="bg-red-600/15 hover:bg-red-600 border border-red-600/40 text-red-400 hover:text-white rounded-xl px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Delete venue
+              </button>
             </div>
-            <button
-              onClick={handleDeleteVenue}
-              className="bg-red-600/20 hover:bg-red-600 border border-red-600/50 text-red-400 hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            >
-              Delete venue
-            </button>
           </div>
         </div>
       </div>

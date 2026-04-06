@@ -2,11 +2,14 @@
 
 A real-time, QR-code-based song voting system for public venues. Guests scan a QR code, search YouTube for songs, and vote — the crowd decides what plays next.
 
+Built with an **Apple Liquid Glass** UI — translucent glass panels floating over animated teal/cyan ambient gradients, inspired by iOS 26 and visionOS.
+
 ---
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Design](#design)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
@@ -39,6 +42,20 @@ EchoVote lets venues hand over the playlist to their crowd. The admin registers 
 
 ---
 
+## Design
+
+EchoVote uses an **Apple Liquid Glass** design language across all pages:
+
+- **Glass surfaces** — every card, panel, input, and bar uses translucent glass (`backdrop-filter: blur`, `rgba` backgrounds, inner glow borders)
+- **Ambient background** — animated teal/cyan color blobs that drift slowly behind the glass panels, creating a living gradient effect
+- **Teal/Cyan palette** — primary accent `#06b6d4` (cyan), secondary `#14b8a6` (teal), with glowing highlights
+- **No external library** — pure CSS with Tailwind utility classes and custom glass utilities (`glass`, `glass-heavy`, `glass-subtle`, `glass-input`, `glass-button`)
+- **Dark base** — deep dark background (`#0a1a1e`) that lets the ambient blobs and glass surfaces pop
+
+The design is consistent across all three pages (VenuePage, AdminLogin, AdminDashboard) for a unified premium experience.
+
+---
+
 ## Architecture
 
 Monorepo with three top-level directories:
@@ -59,6 +76,7 @@ The three Docker services (client, server, mongo) communicate over an internal b
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, Vite, Tailwind CSS, React Router v6 |
+| Design | Apple Liquid Glass (pure CSS — backdrop-filter, glass utilities) |
 | Realtime | Socket.io (client + server) |
 | Backend | Node.js, Express |
 | Database | MongoDB 7 via Mongoose ODM |
@@ -89,7 +107,7 @@ echovote/
 │   └── src/
 │       ├── main.jsx
 │       ├── App.jsx
-│       ├── index.css
+│       ├── index.css              # Glass utilities + ambient blob animations
 │       ├── pages/
 │       │   ├── VenuePage.jsx        # Guest voting UI (/venue/:id)
 │       │   ├── AdminLogin.jsx       # Admin login + registration + 2FA setup
@@ -112,7 +130,7 @@ echovote/
     ├── package.json
     ├── uploads/                     # Venue images (served statically)
     └── src/
-        ├── index.js                 # App entry: Express + Socket.io + DB
+        ├─�� index.js                 # App entry: Express + Socket.io + DB
         ├── config/
         │   ├── db.js                # Mongoose connection
         │   └── env.js               # Centralised env vars
@@ -120,7 +138,7 @@ echovote/
         │   ├── Venue.js             # + image field
         │   ├── Song.js
         │   ├── ActiveQueue.js
-        │   ├── PlaybackState.js
+        │   ├─��� PlaybackState.js
         │   └── Admin.js             # + twoFactorSecret, twoFactorEnabled
         ├── routes/
         │   ├── auth.js              # Login, register, 2FA setup + verify

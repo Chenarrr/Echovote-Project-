@@ -38,7 +38,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint }) => {
     <div className="mb-5">
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="flex-1 relative">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30">
             <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
           </svg>
           <input
@@ -49,36 +49,36 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint }) => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for a song..."
             autoComplete="off"
-            className="w-full bg-surface-800 border border-surface-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
+            className="w-full glass-input rounded-glass pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/30 focus:border-accent/50"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="bg-accent hover:bg-accent-hover text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+          className="glass-button text-accent rounded-glass px-5 py-2.5 text-sm font-medium disabled:opacity-50"
         >
           {loading ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
           ) : 'Search'}
         </button>
       </form>
 
       {results.length > 0 && (
-        <div className="mt-2 bg-surface-800 border border-surface-700 rounded-lg overflow-hidden divide-y divide-surface-700/50">
+        <div className="mt-2 glass rounded-glass overflow-hidden divide-y divide-white/[0.06]">
           {results.map((song) => (
-            <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-surface-700/30 transition-colors">
-              <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+            <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-white/[0.05] transition-colors">
+              <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-surface-100 truncate">{song.title}</p>
-                  {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-surface-600 text-surface-300 rounded px-1 py-0.5">E</span>}
+                  <p className="text-sm font-medium text-white truncate">{song.title}</p>
+                  {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-white/10 text-white/50 rounded px-1 py-0.5">E</span>}
                 </div>
-                <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
+                <p className="text-xs text-white/40 truncate mt-0.5">{song.artist}</p>
               </div>
               <button
                 onClick={() => handleAdd(song)}
                 disabled={adding === song.youtubeId}
-                className="text-xs bg-accent/10 text-accent hover:bg-accent/20 rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50 flex-shrink-0"
+                className="text-xs glass-button text-accent rounded-lg px-3 py-1.5 font-medium disabled:opacity-50 flex-shrink-0"
               >
                 {adding === song.youtubeId ? '...' : 'Add to queue'}
               </button>

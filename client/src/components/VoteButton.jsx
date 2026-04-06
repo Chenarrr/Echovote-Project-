@@ -5,10 +5,10 @@ const VoteButton = ({ count, voted, onClick, onUnvote, disabled }) => {
     <button
       onClick={voted ? onUnvote : onClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all
+      className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all
         ${voted
-          ? 'bg-accent-muted text-accent hover:bg-red-500/10 hover:text-red-400 active:scale-[0.97]'
-          : 'bg-surface-800 text-surface-300 hover:bg-accent-muted hover:text-accent active:scale-[0.97]'
+          ? 'bg-accent/20 border border-accent/30 text-accent shadow-glow hover:bg-red-500/15 hover:border-red-500/30 hover:text-red-400 hover:shadow-none active:scale-[0.97]'
+          : 'glass-subtle text-white/50 hover:bg-accent/15 hover:text-accent hover:border-accent/25 active:scale-[0.97]'
         }
         ${disabled ? 'opacity-40 cursor-not-allowed' : ''}
       `}
