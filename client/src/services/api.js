@@ -30,6 +30,7 @@ export const adminPause = () => api.post('/api/admin/pause');
 export const adminFilter = () => api.post('/api/admin/filter');
 export const adminSeed = (seeds) => api.post('/api/admin/seed', { seeds });
 export const deleteVenue = () => api.delete('/api/admin/venue');
+export const playNow = (song) => api.post('/api/admin/play-now', song);
 export const getQrCode = (venueId) =>
   `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/qr/${venueId}`;
 

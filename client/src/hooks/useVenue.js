@@ -5,6 +5,7 @@ import useSocket from './useSocket';
 const useVenue = (venueId) => {
   const [queue, setQueue] = useState([]);
   const [nowPlaying, setNowPlaying] = useState(null);
+  const [playbackProgress, setPlaybackProgress] = useState({ currentTime: 0, duration: 0 });
   const [loading, setLoading] = useState(true);
 
   const fetchQueue = useCallback(async () => {
@@ -24,7 +25,8 @@ const useVenue = (venueId) => {
 
   useSocket(venueId, {
     queue_updated: ({ queue: q }) => setQueue(q),
-    now_playing: ({ song }) => setNowPlaying(song),
+    now_playing: ({ song }) => { setNowPlaying(song); setPlaybackProgress({ currentTime: 0, duration: 0 }); },
+    playback_progress: ({ currentTime, duration }) => setPlaybackProgress({ currentTime, duration }),
     update_tally: ({ songId, newCount }) => {
       setQueue((prev) =>
         prev.map((entry) =>
@@ -36,7 +38,7 @@ const useVenue = (venueId) => {
     },
   });
 
-  return { queue, nowPlaying, loading, refetch: fetchQueue };
+  return { queue, nowPlaying, playbackProgress, loading, refetch: fetchQueue };
 };
 
 export default useVenue;

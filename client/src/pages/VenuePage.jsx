@@ -11,7 +11,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const VenuePage = () => {
   const { id: venueId } = useParams();
-  const { queue, nowPlaying, loading, refetch } = useVenue(venueId);
+  const { queue, nowPlaying, playbackProgress, loading, refetch } = useVenue(venueId);
   const [fingerprint, setFingerprint] = useState(null);
   const [votedSongs, setVotedSongs] = useState(new Set());
   const [venue, setVenue] = useState(null);
@@ -82,7 +82,7 @@ const VenuePage = () => {
         )}
       </div>
 
-      <NowPlaying song={nowPlaying} />
+      <NowPlaying song={nowPlaying} progress={playbackProgress} />
     </div>
   );
 };

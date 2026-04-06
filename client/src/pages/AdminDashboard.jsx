@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminSkip, adminPause, adminFilter, adminSeed, getAdminVenue, uploadVenueImage, deleteVenue } from '../services/api';
+import { adminSkip, adminPause, adminFilter, getAdminVenue, uploadVenueImage, deleteVenue, searchSongs, addSong, playNow } from '../services/api';
 import useVenue from '../hooks/useVenue';
 import QRDisplay from '../components/QRDisplay';
 import useSocket from '../hooks/useSocket';
@@ -13,15 +13,23 @@ const AdminDashboard = () => {
   const { queue, nowPlaying, loading } = useVenue(venueId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [explicitFilter, setExplicitFilter] = useState(false);
-  const [seedInput, setSeedInput] = useState('');
   const [venue, setVenue] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [adminQuery, setAdminQuery] = useState('');
+  const [adminResults, setAdminResults] = useState([]);
+  const [adminSearching, setAdminSearching] = useState(false);
+  const [adminAdding, setAdminAdding] = useState(null);
   const playerRef = useRef(null);
   const playerInstanceRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  useSocket(venueId, {
-    playback_state: ({ isPlaying: p }) => setIsPlaying(p),
+  const socket = useSocket(venueId, {
+    playback_state: ({ isPlaying: p }) => {
+      setIsPlaying(p);
+      if (playerInstanceRef.current) {
+        p ? playerInstanceRef.current.playVideo() : playerInstanceRef.current.pauseVideo();
+      }
+    },
     now_playing: ({ song }) => {
       if (song && playerInstanceRef.current) {
         playerInstanceRef.current.loadVideoById(song.youtubeId);
@@ -63,6 +71,19 @@ const AdminDashboard = () => {
       playerInstanceRef.current.loadVideoById(nowPlaying.youtubeId);
     }
   }, [nowPlaying]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (playerInstanceRef.current && socket) {
+        const currentTime = playerInstanceRef.current.getCurrentTime?.();
+        const duration = playerInstanceRef.current.getDuration?.();
+        if (currentTime != null && duration) {
+          socket.emit('progress_update', { venueId, currentTime, duration });
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [venueId, socket]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -106,7 +127,13 @@ const AdminDashboard = () => {
   };
 
   const handlePause = async () => {
-    try { const { data } = await adminPause(); setIsPlaying(data.isPlaying); } catch (err) { alert(err.message); }
+    try {
+      const { data } = await adminPause();
+      setIsPlaying(data.isPlaying);
+      if (playerInstanceRef.current) {
+        data.isPlaying ? playerInstanceRef.current.playVideo() : playerInstanceRef.current.pauseVideo();
+      }
+    } catch (err) { alert(err.message); }
   };
 
   const handleFilter = async () => {
@@ -116,9 +143,39 @@ const AdminDashboard = () => {
     } catch (err) { alert(err.message); }
   };
 
-  const handleSeed = async () => {
-    const seeds = seedInput.split(',').map((s) => s.trim()).filter(Boolean);
-    try { await adminSeed(seeds); setSeedInput(''); alert('Seeds updated'); } catch (err) { alert(err.message); }
+  const handleAdminSearch = async (e) => {
+    e.preventDefault();
+    if (!adminQuery.trim()) return;
+    setAdminSearching(true);
+    try {
+      const { data } = await searchSongs(adminQuery);
+      setAdminResults(data);
+    } catch { setAdminResults([]); }
+    finally { setAdminSearching(false); }
+  };
+
+  const handlePlayNow = async (song) => {
+    setAdminAdding(song.youtubeId);
+    try {
+      const { data } = await playNow(song);
+      if (playerInstanceRef.current) {
+        playerInstanceRef.current.loadVideoById(data.song.youtubeId);
+      }
+      setIsPlaying(true);
+      setAdminResults([]);
+      setAdminQuery('');
+    } catch (err) { alert(err.response?.data?.error || 'Failed to play'); }
+    finally { setAdminAdding(null); }
+  };
+
+  const handleAddToQueue = async (song) => {
+    setAdminAdding(song.youtubeId);
+    try {
+      await addSong(venueId, song);
+      setAdminResults([]);
+      setAdminQuery('');
+    } catch (err) { alert(err.response?.data?.error || 'Could not add song'); }
+    finally { setAdminAdding(null); }
   };
 
   return (
@@ -255,21 +312,58 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* Seed playlist */}
+        {/* Admin Search */}
         <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Seed Playlist</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={seedInput}
-              onChange={(e) => setSeedInput(e.target.value)}
-              placeholder="YouTube video IDs, comma separated..."
-              className="flex-1 bg-surface-800 border border-surface-700 rounded-lg px-3.5 py-2 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
-            />
-            <button onClick={handleSeed} className="bg-accent hover:bg-accent-hover text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-              Save
+          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Play a Song</h2>
+          <form onSubmit={handleAdminSearch} className="flex gap-2">
+            <div className="flex-1 relative">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-500">
+                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+              </svg>
+              <input
+                type="text"
+                value={adminQuery}
+                onChange={(e) => setAdminQuery(e.target.value)}
+                placeholder="Search for a song..."
+                className="w-full bg-surface-800 border border-surface-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
+              />
+            </div>
+            <button type="submit" disabled={adminSearching} className="bg-accent hover:bg-accent-hover text-white rounded-lg px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50">
+              {adminSearching ? '...' : 'Search'}
             </button>
-          </div>
+          </form>
+          {adminResults.length > 0 && (
+            <div className="mt-2 bg-surface-800 border border-surface-700 rounded-lg overflow-hidden divide-y divide-surface-700/50">
+              {adminResults.map((song) => (
+                <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-surface-700/30 transition-colors">
+                  <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+                      {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-surface-600 text-surface-300 rounded px-1 py-0.5">E</span>}
+                    </div>
+                    <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
+                  </div>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => handlePlayNow(song)}
+                      disabled={adminAdding === song.youtubeId}
+                      className="text-xs bg-accent text-white hover:bg-accent-hover rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50"
+                    >
+                      Play now
+                    </button>
+                    <button
+                      onClick={() => handleAddToQueue(song)}
+                      disabled={adminAdding === song.youtubeId}
+                      className="text-xs bg-surface-700 text-surface-200 hover:bg-surface-600 rounded-md px-3 py-1.5 font-medium transition-colors disabled:opacity-50"
+                    >
+                      Queue
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Danger Zone */}

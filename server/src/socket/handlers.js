@@ -18,6 +18,10 @@ const registerHandlers = (io) => {
       }
     });
 
+    socket.on('progress_update', ({ venueId, currentTime, duration }) => {
+      socket.to(`venue:${venueId}`).emit('playback_progress', { currentTime, duration });
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
     });

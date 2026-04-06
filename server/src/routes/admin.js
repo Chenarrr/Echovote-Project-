@@ -124,6 +124,30 @@ router.get('/venue', async (req, res) => {
   }
 });
 
+router.post('/play-now', async (req, res) => {
+  try {
+    const { venueId } = req.admin;
+    const { youtubeId, title, thumbnail, artist, isExplicit = false } = req.body;
+
+    if (!youtubeId || !title) return res.status(400).json({ error: 'youtubeId and title are required' });
+
+    const song = await Song.create({ youtubeId, title, thumbnail, artist, isExplicit, venueId });
+
+    let playback = await PlaybackState.findOne({ venueId });
+    if (!playback) playback = await PlaybackState.create({ venueId, isPlaying: false });
+
+    playback.currentSongId = song._id;
+    playback.progress = 0;
+    playback.isPlaying = true;
+    await playback.save();
+
+    emitToVenue(venueId, 'now_playing', { song });
+    res.json({ song });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/venue', async (req, res) => {
   try {
     const { venueId } = req.admin;
