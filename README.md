@@ -670,3 +670,21 @@ For a venue app that needs to stay responsive during events, consider Fly.io (se
 ### Sharing with friends
 
 Once deployed, just share the Vercel URL. They can register their own venue and start using it immediately. The QR code will automatically point to the correct production URL.
+
+### QR code URLs
+
+The QR code is generated using `VITE_API_URL`, so it must be set correctly for guests to scan it.
+
+| Environment | What to set |
+|---|---|
+| **Local (same WiFi)** | `VITE_API_URL=http://192.168.x.x:3001` (your machine's local IP — run `ipconfig getifaddr en0` to find it) |
+| **Production** | `VITE_API_URL=https://your-server.onrender.com` |
+
+In production, also make sure these are set:
+```
+VITE_API_URL=https://your-server.onrender.com
+VITE_SOCKET_URL=https://your-server.onrender.com
+CLIENT_ORIGIN=https://your-app.vercel.app
+```
+
+Once set correctly, the QR code works from any phone on any network — no same-WiFi requirement.

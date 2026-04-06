@@ -17,9 +17,15 @@ const qrRoutes = require('./routes/qr');
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  CLIENT_ORIGIN,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_ORIGIN,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
   },
 });
@@ -27,7 +33,7 @@ const io = new Server(server, {
 socketManager.init(io);
 registerHandlers(io);
 
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
