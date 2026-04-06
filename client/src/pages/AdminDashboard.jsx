@@ -232,6 +232,8 @@ const AdminDashboard = () => {
             <div>
               <input
                 ref={fileInputRef}
+                id="venue-image-upload"
+                name="venue-image-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
@@ -321,7 +323,7 @@ const AdminDashboard = () => {
                     <span className="text-surface-500 text-xs font-semibold w-5 text-center tabular-nums">{i + 1}</span>
                     <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+                      <p className="text-sm font-medium text-surface-100 truncate">{song.title}</p>
                       <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
                     </div>
                     <span className="text-accent text-xs font-semibold tabular-nums">{entry.voteCount}</span>
@@ -350,10 +352,13 @@ const AdminDashboard = () => {
                 <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
               </svg>
               <input
+                id="admin-song-search"
+                name="admin-song-search"
                 type="text"
                 value={adminQuery}
                 onChange={(e) => setAdminQuery(e.target.value)}
                 placeholder="Search for a song..."
+                autoComplete="off"
                 className="w-full bg-surface-800 border border-surface-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
               />
             </div>
@@ -368,7 +373,7 @@ const AdminDashboard = () => {
                   <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-medium text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+                      <p className="text-sm font-medium text-surface-100 truncate">{song.title}</p>
                       {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-surface-600 text-surface-300 rounded px-1 py-0.5">E</span>}
                     </div>
                     <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
