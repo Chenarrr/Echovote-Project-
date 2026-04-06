@@ -78,52 +78,52 @@ const VenuePage = () => {
   }, [fingerprint, venueId]);
 
   return (
-    <div className="min-h-screen relative pb-20">
-      {/* Ambient background */}
+    <div className="min-h-screen relative pb-24">
       <div className="ambient-bg">
         <div className="ambient-blob ambient-blob-1" />
         <div className="ambient-blob ambient-blob-2" />
         <div className="ambient-blob ambient-blob-3" />
       </div>
 
-      {/* Content */}
       <div className="relative z-10">
-        <header className="px-4 pt-6 pb-5">
-          <div className="max-w-lg mx-auto glass-heavy rounded-glass-lg px-4 py-3 flex items-center justify-between">
+        {/* Header */}
+        <header className="px-4 pt-5 pb-4">
+          <div className="max-w-lg mx-auto glass-heavy rounded-2xl px-4 py-3 flex items-center justify-between float-in">
             <div className="flex items-center gap-3">
               {venue?.image ? (
                 <img
                   src={`${API_URL}${venue.image}`}
                   alt={venue.name}
-                  className="w-9 h-9 rounded-lg object-cover ring-1 ring-white/10"
+                  className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10"
                 />
               ) : (
-                <div className="w-9 h-9 bg-accent/15 rounded-lg flex items-center justify-center border border-accent/20">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-accent">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(168,85,247,0.2))' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-cyan-400">
                     <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
                   </svg>
                 </div>
               )}
               <div>
-                <h1 className="text-base font-semibold text-white tracking-tight">
+                <h1 className="text-base font-bold text-gradient tracking-tight">
                   {venue?.name || 'EchoVote'}
                 </h1>
-                <p className="text-white/40 text-xs mt-0.5">Vote for the next song</p>
+                <p className="text-white/35 text-[11px] mt-0.5">Request songs, vote for vibes</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 bg-success/15 border border-success/25 rounded-full px-2.5 py-1">
-              <span className="w-1.5 h-1.5 bg-success rounded-full shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-              <span className="text-[10px] text-success/90 font-medium">Live</span>
+            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full pulse-ring" />
+              <span className="text-[10px] text-emerald-400/90 font-semibold">LIVE</span>
             </div>
           </div>
         </header>
 
-        <div className="px-4 pt-2 max-w-lg mx-auto">
+        <div className="px-4 pt-1 max-w-lg mx-auto">
           <SearchBar venueId={venueId} onSongAdded={refetch} fingerprint={fingerprint} />
 
           {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+            <div className="flex flex-col items-center py-20 gap-3">
+              <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+              <p className="text-white/30 text-xs">Loading the queue...</p>
             </div>
           ) : (
             <Leaderboard queue={queue} votedSongs={votedSongs} onVote={handleVote} onUnvote={handleUnvote} fingerprint={fingerprint} onDelete={handleDelete} />

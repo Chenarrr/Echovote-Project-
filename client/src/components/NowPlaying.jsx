@@ -7,9 +7,9 @@ const formatTime = (seconds) => {
 };
 
 const REACTIONS = [
-  { emoji: '\uD83D\uDD25', key: 'fire' },
-  { emoji: '\uD83D\uDE10', key: 'meh' },
-  { emoji: '\uD83D\uDC4E', key: 'dislike' },
+  { emoji: '🔥', key: 'fire', label: 'Fire' },
+  { emoji: '😐', key: 'meh', label: 'Meh' },
+  { emoji: '👎', key: 'dislike', label: 'Skip' },
 ];
 
 const NowPlaying = ({ song, progress = {}, onReaction }) => {
@@ -21,52 +21,75 @@ const NowPlaying = ({ song, progress = {}, onReaction }) => {
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const handleReaction = (key) => {
-    if (!onReaction) return;
-    if (reacted === key) return;
+    if (!onReaction || reacted === key) return;
     setReacted(key);
     onReaction(key);
   };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
+      {/* Gradient progress bar */}
       {duration > 0 && (
-        <div className="h-1 bg-white/5 w-full">
-          <div className="h-full bg-accent transition-all duration-1000 ease-linear shadow-[0_0_8px_rgba(6,182,212,0.4)]" style={{ width: `${percent}%` }} />
+        <div className="h-[3px] bg-white/5 w-full">
+          <div
+            className="h-full np-progress transition-all duration-1000 ease-linear rounded-r-full"
+            style={{ width: `${percent}%` }}
+          />
         </div>
       )}
+
       <div className="glass-heavy px-4 py-3 flex items-center gap-3">
-        <div className="relative">
-          <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded-lg object-cover ring-1 ring-white/10" />
-          <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-[#0a1a1e] shadow-[0_0_6px_rgba(34,197,94,0.4)]" />
+        {/* Album art with glow */}
+        <div className="relative flex-shrink-0">
+          <div className="absolute inset-0 rounded-xl blur-lg opacity-40" style={{
+            backgroundImage: `url(${song.thumbnail})`,
+            backgroundSize: 'cover',
+          }} />
+          <img src={song.thumbnail} alt={song.title} className="relative w-11 h-11 rounded-xl object-cover ring-1 ring-white/15" />
         </div>
+
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-accent/70 font-medium uppercase tracking-wider">Now playing</p>
-          <p className="text-sm font-medium text-white truncate">{song.title}</p>
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-end gap-[3px] h-3 flex-shrink-0">
+              <span className="w-[2.5px] bg-cyan-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '0ms' }} />
+              <span className="w-[2.5px] bg-cyan-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '200ms' }} />
+              <span className="w-[2.5px] bg-purple-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '400ms' }} />
+            </div>
+            <p className="text-[10px] text-cyan-400/80 font-bold uppercase tracking-widest">Playing</p>
+          </div>
+          <p className="text-sm font-semibold text-white truncate mt-0.5">{song.title}</p>
         </div>
+
         {duration > 0 && (
-          <span className="text-xs text-white/30 tabular-nums flex-shrink-0">
-            {formatTime(currentTime)} / {formatTime(duration)}
+          <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0 font-medium">
+            {formatTime(currentTime)}<span className="text-white/15"> / </span>{formatTime(duration)}
           </span>
         )}
+
         {onReaction && (
-          <div className="flex gap-1 flex-shrink-0">
+          <div className="flex gap-0.5 flex-shrink-0">
             {REACTIONS.map(({ emoji, key }) => (
               <button
                 key={key}
                 onClick={() => handleReaction(key)}
-                className={`text-lg px-1.5 py-0.5 rounded-lg transition-all ${reacted === key ? 'glass scale-110' : 'hover:bg-white/[0.06] opacity-60 hover:opacity-100'}`}
+                className={`text-lg w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                  reacted === key
+                    ? 'glass scale-110 shadow-[0_0_12px_rgba(6,182,212,0.2)]'
+                    : 'opacity-50 hover:opacity-100 hover:bg-white/[0.06]'
+                }`}
               >
                 {emoji}
               </button>
             ))}
           </div>
         )}
+
         {!onReaction && (
-          <div className="flex items-end gap-[3px] h-4">
-            <span className="w-[3px] bg-accent rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '0ms' }} />
-            <span className="w-[3px] bg-accent rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '200ms' }} />
-            <span className="w-[3px] bg-accent rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '400ms' }} />
-            <span className="w-[3px] bg-accent rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '150ms' }} />
+          <div className="flex items-end gap-[3px] h-4 flex-shrink-0">
+            <span className="w-[3px] bg-cyan-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '0ms' }} />
+            <span className="w-[3px] bg-cyan-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '200ms' }} />
+            <span className="w-[3px] bg-purple-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '400ms' }} />
+            <span className="w-[3px] bg-cyan-400 rounded-full" style={{ animation: 'eq-bar 0.8s ease-in-out infinite', animationDelay: '150ms' }} />
           </div>
         )}
       </div>

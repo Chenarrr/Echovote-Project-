@@ -4,23 +4,24 @@ import SongCard from './SongCard';
 const Leaderboard = ({ queue, votedSongs, onVote, onUnvote, fingerprint, onDelete }) => {
   if (!queue.length) {
     return (
-      <div className="text-center py-16">
-        <div className="w-12 h-12 rounded-full glass flex items-center justify-center mx-auto mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-white/30">
-            <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
-          </svg>
-        </div>
-        <p className="text-white/60 text-sm font-medium">No songs in the queue yet</p>
-        <p className="text-white/30 text-xs mt-1">Search above to add the first track</p>
+      <div className="text-center py-20 float-in">
+        <div className="text-5xl mb-4">🎵</div>
+        <p className="text-white/70 text-base font-semibold">The stage is empty</p>
+        <p className="text-white/30 text-sm mt-1.5">Search for a song above and get the party started</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Queue</h2>
-        <span className="text-xs text-white/25">{queue.length} {queue.length === 1 ? 'song' : 'songs'}</span>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-bold text-white/50 uppercase tracking-widest">Up Next</h2>
+          <div className="h-px w-8 bg-gradient-to-r from-cyan-500/30 to-transparent" />
+        </div>
+        <span className="text-[11px] text-white/25 font-medium tabular-nums">
+          {queue.length} {queue.length === 1 ? 'track' : 'tracks'} queued
+        </span>
       </div>
       <div className="flex flex-col gap-2">
         {queue.map((entry, i) => {
