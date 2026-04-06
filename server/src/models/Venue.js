@@ -10,4 +10,12 @@ const venueSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+venueSchema.pre('findOneAndDelete', async function () {
+  const venue = await this.model.findOne(this.getFilter());
+  if (venue) {
+    const Admin = mongoose.model('Admin');
+    await Admin.deleteMany({ venueId: venue._id });
+  }
+});
+
 module.exports = mongoose.model('Venue', venueSchema);

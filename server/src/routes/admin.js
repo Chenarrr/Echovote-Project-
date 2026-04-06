@@ -1,9 +1,11 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const authMiddleware = require('../middleware/auth');
 const PlaybackState = require('../models/PlaybackState');
 const ActiveQueue = require('../models/ActiveQueue');
+const Song = require('../models/Song');
 const Venue = require('../models/Venue');
 const { emitToVenue } = require('../services/socketManager');
 
@@ -114,6 +116,24 @@ router.get('/venue', async (req, res) => {
     const venue = await Venue.findById(venueId);
     if (!venue) return res.status(404).json({ error: 'Venue not found' });
     res.json(venue);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/venue', async (req, res) => {
+  try {
+    const { venueId } = req.admin;
+
+    // Delete all queue entries, songs, and playback state for this venue
+    await ActiveQueue.deleteMany({ venueId });
+    await Song.deleteMany({ venueId });
+    await PlaybackState.deleteMany({ venueId });
+
+    // Delete venue — pre hook in Venue.js auto-deletes the linked admin
+    await Venue.findOneAndDelete({ _id: venueId });
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

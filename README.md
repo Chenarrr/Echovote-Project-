@@ -302,12 +302,15 @@ db.songs.find().pretty()
 
 ### Delete data
 
-```js
-// Delete a specific admin by email
-db.admins.deleteOne({ email: "user@example.com" })
+> **Note:** The `Venue` model has a cascading delete hook — when a venue is deleted via the app's API, its linked admin is automatically deleted too. When deleting directly in mongosh, the hook does **not** fire, so you must delete both manually.
 
-// Delete a specific venue by name
+```js
+// Delete a venue and its admin (mongosh — do both manually)
 db.venues.deleteOne({ name: "My Venue" })
+db.admins.deleteOne({ email: "admin@example.com" })
+
+// Delete a specific admin by email only
+db.admins.deleteOne({ email: "user@example.com" })
 
 // Delete all admins
 db.admins.deleteMany({})
@@ -480,6 +483,7 @@ Returns `409` if fingerprint already voted for that song.
 | POST | `/api/admin/seed` | `{ seeds: [String] }` | Set weekly seed YouTube video IDs |
 | POST | `/api/admin/venue-image` | `multipart/form-data` with `image` field | Upload venue photo (JPG/PNG, max 5MB) |
 | GET | `/api/admin/venue` | — | Get full venue details for authenticated admin |
+| DELETE | `/api/admin/venue` | — | Delete venue, admin account, all songs, and queue (irreversible) |
 
 ### QR
 
@@ -535,6 +539,7 @@ Admin control panel with:
 - Live queue with real-time vote counts
 - QR code display
 - Controls for skip, pause, explicit filter, seed playlist
+- Danger Zone: delete venue button (asks for confirmation, wipes venue + admin + all data, then redirects to login)
 
 ### Components
 

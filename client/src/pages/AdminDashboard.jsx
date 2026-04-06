@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminSkip, adminPause, adminFilter, adminSeed, getAdminVenue, uploadVenueImage } from '../services/api';
+import { adminSkip, adminPause, adminFilter, adminSeed, getAdminVenue, uploadVenueImage, deleteVenue } from '../services/api';
 import useVenue from '../hooks/useVenue';
 import QRDisplay from '../components/QRDisplay';
 import useSocket from '../hooks/useSocket';
@@ -74,6 +74,21 @@ const AdminDashboard = () => {
     localStorage.removeItem('echovote_token');
     localStorage.removeItem('echovote_venueId');
     navigate('/admin/login');
+  };
+
+  const handleDeleteVenue = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${venue?.name}"?\n\nThis will permanently delete the venue, your admin account, all songs, and the entire queue. This cannot be undone.`
+    );
+    if (!confirmed) return;
+    try {
+      await deleteVenue();
+      localStorage.removeItem('echovote_token');
+      localStorage.removeItem('echovote_venueId');
+      navigate('/admin/login');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete venue');
+    }
   };
 
   const handleSkip = async () => {
@@ -206,6 +221,23 @@ const AdminDashboard = () => {
             />
             <button onClick={handleSeed} className="bg-accent hover:bg-accent-hover text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
               Save
+            </button>
+          </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-surface-800/60 border border-red-900/40 rounded-lg p-4 mb-6">
+          <h2 className="text-xs font-semibold text-red-400/80 uppercase tracking-wider mb-3">Danger Zone</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-surface-200">Delete this venue</p>
+              <p className="text-xs text-surface-500 mt-0.5">Permanently deletes the venue, your account, all songs, and the queue.</p>
+            </div>
+            <button
+              onClick={handleDeleteVenue}
+              className="bg-red-600/20 hover:bg-red-600 border border-red-600/50 text-red-400 hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            >
+              Delete venue
             </button>
           </div>
         </div>

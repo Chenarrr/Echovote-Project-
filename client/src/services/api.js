@@ -29,6 +29,7 @@ export const adminSkip = () => api.post('/api/admin/skip');
 export const adminPause = () => api.post('/api/admin/pause');
 export const adminFilter = () => api.post('/api/admin/filter');
 export const adminSeed = (seeds) => api.post('/api/admin/seed', { seeds });
+export const deleteVenue = () => api.delete('/api/admin/venue');
 export const getQrCode = (venueId) =>
   `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/qr/${venueId}`;
 
