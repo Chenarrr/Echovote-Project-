@@ -2,7 +2,7 @@
 
 A real-time, QR-code-based song voting system for public venues. Guests scan a QR code, search YouTube for songs, and vote — the crowd decides what plays next.
 
-Built with an **Apple Liquid Glass** UI — translucent glass panels floating over animated teal/cyan ambient gradients, inspired by iOS 26 and visionOS.
+Built with an **Apple Liquid Glass** UI — translucent glass panels floating over animated ambient gradients with a music-first personality. Inspired by iOS 26 and visionOS, designed for the crowd.
 
 ---
 
@@ -44,13 +44,26 @@ EchoVote lets venues hand over the playlist to their crowd. The admin registers 
 
 ## Design
 
-EchoVote uses an **Apple Liquid Glass** design language across all pages:
+EchoVote uses an **Apple Liquid Glass** design language with a music-first personality — every detail is built to feel alive, fun, and made for the crowd.
+
+### Glass & Ambient
 
 - **Glass surfaces** — every card, panel, input, and bar uses translucent glass (`backdrop-filter: blur`, `rgba` backgrounds, inner glow borders)
-- **Ambient background** — animated teal/cyan color blobs that drift slowly behind the glass panels, creating a living gradient effect
-- **Teal/Cyan palette** — primary accent `#06b6d4` (cyan), secondary `#14b8a6` (teal), with glowing highlights
+- **Living background** — three animated color blobs (cyan, purple, teal) drift behind the glass, giving every page a breathing, organic feel
+- **Teal/Cyan + Purple palette** — primary `#06b6d4` (cyan) with purple accents, gradient text, and glowing highlights
 - **No external library** — pure CSS with Tailwind utility classes and custom glass utilities (`glass`, `glass-heavy`, `glass-subtle`, `glass-input`, `glass-button`)
-- **Dark base** — deep dark background (`#0a1a1e`) that lets the ambient blobs and glass surfaces pop
+
+### Personality & Details
+
+- **Crown for #1** — the top-voted song gets a ���� with a gold-highlighted glass card
+- **Vote pop animation** — satisfying scale bounce when you upvote
+- **Gradient progress bar** — the NowPlaying bar shows a cyan → purple → pink gradient with glow
+- **Album art glow** — the now-playing thumbnail casts a blurred light behind it
+- **Multi-color equalizer** — cyan and purple animated bars next to "Playing"
+- **Staggered entrance** — song cards float in one by one
+- **Conversational copy** — "What do you wanna hear?", "The stage is empty", "Crowd vibes"
+- **Pulsing live indicator** — animated ring on the LIVE badge
+- **Micro-interactions** — buttons lift on hover, cards scale subtly, inputs glow on focus
 
 The design is consistent across all three pages (VenuePage, AdminLogin, AdminDashboard) for a unified premium experience.
 
