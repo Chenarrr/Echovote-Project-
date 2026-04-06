@@ -14,8 +14,17 @@ const VenuePage = () => {
   const { id: venueId } = useParams();
   const { queue, nowPlaying, playbackProgress, loading, refetch } = useVenue(venueId);
   const [fingerprint, setFingerprint] = useState(null);
-  const [votedSongs, setVotedSongs] = useState(new Set());
+  const [votedSongs, setVotedSongs] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`echovote_votes_${venueId}`);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [venue, setVenue] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem(`echovote_votes_${venueId}`, JSON.stringify([...votedSongs]));
+  }, [votedSongs, venueId]);
 
   useEffect(() => {
     FingerprintJS.load().then((fp) => fp.get()).then((result) => {
