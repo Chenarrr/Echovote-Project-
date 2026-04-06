@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { searchSongs, addSong } from '../services/api';
 
-const SearchBar = ({ venueId, onSongAdded }) => {
+const SearchBar = ({ venueId, onSongAdded, fingerprint }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -24,10 +24,9 @@ const SearchBar = ({ venueId, onSongAdded }) => {
   const handleAdd = async (song) => {
     setAdding(song.youtubeId);
     try {
-      await addSong(venueId, song);
+      await addSong(venueId, { ...song, addedBy: fingerprint });
       onSongAdded?.();
-      setResults([]);
-      setQuery('');
+      setResults((prev) => prev.filter((s) => s.youtubeId !== song.youtubeId));
     } catch (err) {
       alert(err.response?.data?.error || 'Could not add song');
     } finally {

@@ -46,6 +46,13 @@ router.post('/:venueId', async (req, res) => {
       return res.status(403).json({ error: 'Explicit songs are not allowed at this venue' });
     }
 
+    if (addedBy) {
+      const userSongCount = await Song.countDocuments({ venueId, addedBy });
+      if (userSongCount >= 2) {
+        return res.status(403).json({ error: 'You can only add up to 2 songs. Remove one to add another.' });
+      }
+    }
+
     const existing = await ActiveQueue.findOne({ venueId }).populate({
       path: 'songId',
       match: { youtubeId },
@@ -61,6 +68,32 @@ router.post('/:venueId', async (req, res) => {
     emitToVenue(venueId, 'queue_updated', { queue });
 
     res.status(201).json({ song, queueEntry });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/:venueId/:songId', async (req, res) => {
+  try {
+    const { venueId, songId } = req.params;
+    const { fingerprint } = req.body;
+
+    if (!fingerprint) return res.status(400).json({ error: 'fingerprint is required' });
+
+    const song = await Song.findById(songId);
+    if (!song) return res.status(404).json({ error: 'Song not found' });
+
+    if (song.addedBy !== fingerprint) {
+      return res.status(403).json({ error: 'You can only remove songs you added' });
+    }
+
+    await ActiveQueue.deleteOne({ songId: song._id, venueId });
+    await Song.deleteOne({ _id: song._id });
+
+    const queue = await ActiveQueue.find({ venueId }).populate('songId').sort({ voteCount: -1 });
+    emitToVenue(venueId, 'queue_updated', { queue });
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

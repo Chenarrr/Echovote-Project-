@@ -457,13 +457,15 @@ db.admins.aggregate([
 |---|---|---|---|
 | GET | `/api/songs/search` | `?q=<query>` | Search YouTube Data API v3 |
 | GET | `/api/songs/:venueId` | — | Get active queue sorted by votes desc |
-| POST | `/api/songs/:venueId` | `{ youtubeId, title, thumbnail, artist, addedBy, isExplicit? }` | Add song to queue (blocked if explicit filter is ON and song is explicit) |
+| POST | `/api/songs/:venueId` | `{ youtubeId, title, thumbnail, artist, addedBy, isExplicit? }` | Add song to queue (blocked if explicit filter ON; max 2 per fingerprint) |
+| DELETE | `/api/songs/:venueId/:songId` | `{ fingerprint }` | Guest removes their own song (must match `addedBy`) |
 
 ### Votes
 
 | Method | Endpoint | Body | Description |
 |---|---|---|---|
 | POST | `/api/votes/:songId` | `{ visitorFingerprint }` | Cast a vote; rate-limited to 10/min per IP |
+| DELETE | `/api/votes/:songId` | `{ visitorFingerprint }` | Undo a vote |
 
 Returns `409` if fingerprint already voted for that song.
 
@@ -481,6 +483,7 @@ Returns `409` if fingerprint already voted for that song.
 | POST | `/api/admin/pause` | — | Toggle `isPlaying` on PlaybackState |
 | POST | `/api/admin/filter` | — | Toggle `explicitFilter` on venue settings |
 | POST | `/api/admin/play-now` | `{ youtubeId, title, thumbnail, artist }` | Play a song immediately, bypassing the queue |
+| DELETE | `/api/admin/queue/:songId` | — | Remove any song from the queue |
 | POST | `/api/admin/venue-image` | `multipart/form-data` with `image` field | Upload venue photo (JPG/PNG, max 5MB) |
 | GET | `/api/admin/venue` | — | Get full venue details for authenticated admin |
 | DELETE | `/api/admin/venue` | — | Delete venue, admin account, all songs, and queue (irreversible) |
@@ -510,6 +513,7 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 | `join_venue` | `{ venueId }` | Join the venue's Socket.io room |
 | `cast_vote` | `{ songId, fingerprint, venueId }` | Vote via socket (alternative to REST) |
 | `progress_update` | `{ venueId, currentTime, duration }` | Sent by admin dashboard every second with current playback position |
+| `song_reaction` | `{ venueId, reaction, fingerprint }` | Guest reacts to the current song (fire, meh, dislike) |
 
 ### Server → All clients in venue room
 
@@ -520,6 +524,7 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 | `now_playing` | `{ song }` | Current song changed (skip or auto-advance) |
 | `playback_state` | `{ isPlaying }` | Pause/resume toggled by admin |
 | `playback_progress` | `{ currentTime, duration }` | Current playback position (forwarded from admin to all guests every second) |
+| `reaction_update` | `{ reaction, fingerprint }` | Broadcasted to venue room when a guest reacts to the current song |
 | `vote_error` | `{ error }` | Emitted back to voter socket on failure |
 
 ---
@@ -529,7 +534,7 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 ### Pages
 
 **`/venue/:id` — VenuePage**
-Guest-facing page. Shows venue name and photo in the header. Loads fingerprint on mount, fetches the queue, listens for real-time updates. Supports searching YouTube and adding songs.
+Guest-facing page. Shows venue name and photo in the header. Loads fingerprint on mount, fetches the queue, listens for real-time updates. Supports searching YouTube and adding songs (max 2 per guest). Guests can remove their own songs from the queue.
 
 **`/admin/login` — AdminLogin**
 Three-step flow: credentials → 2FA setup (on register) or 2FA verification (on login) → dashboard redirect.
@@ -542,14 +547,15 @@ Admin control panel with:
 - QR code display
 - Controls for skip, pause/resume, explicit filter (ON/OFF)
 - Admin song search with "Play now" (instant playback) and "Queue" (add to queue) buttons
+- Delete button on each queue entry to remove any song
 - Danger Zone: delete venue button (asks for confirmation, wipes venue + admin + all data, then redirects to login)
 
 ### Components
 
 | Component | Description |
 |---|---|
-| `SongCard` | Displays rank, thumbnail, title, artist, and vote button |
-| `VoteButton` | Upvote button; shows voted state, disables after vote |
+| `SongCard` | Displays rank, thumbnail, title, artist, vote button, and delete button (for own songs) |
+| `VoteButton` | Upvote toggle; click to vote, click again to undo |
 | `SearchBar` | YouTube search with search icon; shows results inline with Add button |
 | `Leaderboard` | Ranked queue list with song count |
 | `NowPlaying` | Fixed bottom bar with progress bar, elapsed/total time, and animated equalizer bars |
@@ -582,8 +588,14 @@ Admins can search for songs and play them immediately via "Play now", bypassing 
 **Live playback progress**
 The admin dashboard emits the YouTube player's current time and duration every second via socket (`progress_update`). The server forwards this to all guests in the venue room (`playback_progress`). The guest NowPlaying bar displays a progress bar and elapsed/total time.
 
-**Duplicate vote prevention**
-Each `ActiveQueue` document stores a `voterFingerprints` array. Before incrementing, `voteController.js` checks if the fingerprint is already in the array. Fingerprints are generated client-side with `@fingerprintjs/fingerprintjs`.
+**Song limit per guest**
+Each guest can add a maximum of 2 songs to the queue (tracked by browser fingerprint via `addedBy`). Guests can remove their own songs to free up a slot. Admins can remove any song.
+
+**Voting with undo**
+Each `ActiveQueue` document stores a `voterFingerprints` array. Voting adds the fingerprint and increments the count; undoing removes it and decrements. The vote button toggles between voted/unvoted states. Fingerprints are generated client-side with `@fingerprintjs/fingerprintjs`.
+
+**Audience reactions**
+Guests can react to the currently playing song with one of three emojis: fire (love it), meh, or dislike. Reactions are sent via socket and displayed live on the admin dashboard as counts. Counts reset when the song changes. This helps the admin decide whether to skip a track.
 
 **Real-time updates**
 All clients join a Socket.io room keyed by venue ID. Every vote, song add, or skip broadcasts to the entire room so every open browser tab updates instantly.

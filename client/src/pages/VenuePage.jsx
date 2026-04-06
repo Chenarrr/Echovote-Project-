@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
-import { castVote, getVenueInfo } from '../services/api';
+import { castVote, undoVote, getVenueInfo, deleteSong } from '../services/api';
 import useVenue from '../hooks/useVenue';
+import { getSocket } from '../services/socket';
 import SearchBar from '../components/SearchBar';
 import Leaderboard from '../components/Leaderboard';
 import NowPlaying from '../components/NowPlaying';
@@ -38,6 +39,35 @@ const VenuePage = () => {
     }
   }, [fingerprint, votedSongs]);
 
+  const handleUnvote = useCallback(async (queueEntryId, songId) => {
+    if (!fingerprint || !votedSongs.has(queueEntryId)) return;
+    try {
+      await undoVote(songId, fingerprint);
+      setVotedSongs((prev) => {
+        const next = new Set(prev);
+        next.delete(queueEntryId);
+        return next;
+      });
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not undo vote');
+    }
+  }, [fingerprint, votedSongs]);
+
+  const handleReaction = useCallback((reaction) => {
+    if (!fingerprint) return;
+    const socket = getSocket();
+    socket.emit('song_reaction', { venueId, reaction, fingerprint });
+  }, [fingerprint, venueId]);
+
+  const handleDelete = useCallback(async (songId) => {
+    if (!fingerprint) return;
+    try {
+      await deleteSong(venueId, songId, fingerprint);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Could not remove song');
+    }
+  }, [fingerprint, venueId]);
+
   return (
     <div className="min-h-screen bg-surface-900 pb-20">
       <header className="px-4 pt-6 pb-5 border-b border-surface-700/50">
@@ -71,18 +101,18 @@ const VenuePage = () => {
       </header>
 
       <div className="px-4 pt-5 max-w-lg mx-auto">
-        <SearchBar venueId={venueId} onSongAdded={refetch} />
+        <SearchBar venueId={venueId} onSongAdded={refetch} fingerprint={fingerprint} />
 
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
           </div>
         ) : (
-          <Leaderboard queue={queue} votedSongs={votedSongs} onVote={handleVote} />
+          <Leaderboard queue={queue} votedSongs={votedSongs} onVote={handleVote} onUnvote={handleUnvote} fingerprint={fingerprint} onDelete={handleDelete} />
         )}
       </div>
 
-      <NowPlaying song={nowPlaying} progress={playbackProgress} />
+      <NowPlaying song={nowPlaying} progress={playbackProgress} onReaction={handleReaction} />
     </div>
   );
 };

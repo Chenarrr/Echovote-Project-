@@ -1,7 +1,7 @@
 import React from 'react';
 import SongCard from './SongCard';
 
-const Leaderboard = ({ queue, votedSongs, onVote }) => {
+const Leaderboard = ({ queue, votedSongs, onVote, onUnvote, fingerprint, onDelete }) => {
   if (!queue.length) {
     return (
       <div className="text-center py-16">
@@ -23,15 +23,22 @@ const Leaderboard = ({ queue, votedSongs, onVote }) => {
         <span className="text-xs text-surface-500">{queue.length} {queue.length === 1 ? 'song' : 'songs'}</span>
       </div>
       <div className="flex flex-col gap-1.5">
-        {queue.map((entry, i) => (
-          <SongCard
-            key={entry._id}
-            entry={entry}
-            rank={i + 1}
-            voted={votedSongs.has(entry._id)}
-            onVote={onVote}
-          />
-        ))}
+        {queue.map((entry, i) => {
+          const song = entry.songId || entry;
+          const canDelete = fingerprint && song.addedBy === fingerprint;
+          return (
+            <SongCard
+              key={entry._id}
+              entry={entry}
+              rank={i + 1}
+              voted={votedSongs.has(entry._id)}
+              onVote={onVote}
+              onUnvote={onUnvote}
+              canDelete={canDelete}
+              onDelete={onDelete}
+            />
+          );
+        })}
       </div>
     </div>
   );

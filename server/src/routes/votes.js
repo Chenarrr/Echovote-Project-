@@ -27,4 +27,37 @@ router.post('/:songId', voteLimiter, async (req, res) => {
   }
 });
 
+router.delete('/:songId', async (req, res) => {
+  try {
+    const { songId } = req.params;
+    const { visitorFingerprint } = req.body;
+
+    if (!visitorFingerprint) {
+      return res.status(400).json({ error: 'visitorFingerprint is required' });
+    }
+
+    const entry = await ActiveQueue.findOne({ songId });
+    if (!entry) return res.status(404).json({ error: 'Song not in active queue' });
+
+    const idx = entry.voterFingerprints.indexOf(visitorFingerprint);
+    if (idx === -1) return res.status(400).json({ error: 'You have not voted for this song' });
+
+    entry.voterFingerprints.splice(idx, 1);
+    entry.voteCount = Math.max(0, entry.voteCount - 1);
+    await entry.save();
+
+    const { emitToVenue } = require('../services/socketManager');
+    emitToVenue(entry.venueId.toString(), 'update_tally', { songId, newCount: entry.voteCount });
+
+    const queue = await ActiveQueue.find({ venueId: entry.venueId })
+      .populate('songId')
+      .sort({ voteCount: -1 });
+    emitToVenue(entry.venueId.toString(), 'queue_updated', { queue });
+
+    res.json({ voteCount: entry.voteCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

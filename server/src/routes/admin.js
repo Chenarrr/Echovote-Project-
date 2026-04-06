@@ -148,6 +148,23 @@ router.post('/play-now', async (req, res) => {
   }
 });
 
+router.delete('/queue/:songId', async (req, res) => {
+  try {
+    const { venueId } = req.admin;
+    const { songId } = req.params;
+
+    await ActiveQueue.deleteOne({ songId, venueId });
+    await Song.deleteOne({ _id: songId, venueId });
+
+    const queue = await ActiveQueue.find({ venueId }).populate('songId').sort({ voteCount: -1 });
+    emitToVenue(venueId, 'queue_updated', { queue });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/venue', async (req, res) => {
   try {
     const { venueId } = req.admin;

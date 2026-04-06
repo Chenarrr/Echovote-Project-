@@ -22,6 +22,10 @@ const registerHandlers = (io) => {
       socket.to(`venue:${venueId}`).emit('playback_progress', { currentTime, duration });
     });
 
+    socket.on('song_reaction', ({ venueId, reaction, fingerprint }) => {
+      io.to(`venue:${venueId}`).emit('reaction_update', { reaction, fingerprint });
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
     });

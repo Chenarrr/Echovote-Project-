@@ -15,6 +15,8 @@ export const getQueue = (venueId) => api.get(`/api/songs/${venueId}`);
 export const addSong = (venueId, song) => api.post(`/api/songs/${venueId}`, song);
 export const castVote = (songId, visitorFingerprint) =>
   api.post(`/api/votes/${songId}`, { visitorFingerprint });
+export const undoVote = (songId, visitorFingerprint) =>
+  api.delete(`/api/votes/${songId}`, { data: { visitorFingerprint } });
 export const adminLogin = (email, password, totpCode) =>
   api.post('/api/auth/login', { email, password, totpCode });
 export const adminRegister = (email, password, venueName) =>
@@ -30,6 +32,9 @@ export const adminPause = () => api.post('/api/admin/pause');
 export const adminFilter = () => api.post('/api/admin/filter');
 export const adminSeed = (seeds) => api.post('/api/admin/seed', { seeds });
 export const deleteVenue = () => api.delete('/api/admin/venue');
+export const adminDeleteSong = (songId) => api.delete(`/api/admin/queue/${songId}`);
+export const deleteSong = (venueId, songId, fingerprint) =>
+  api.delete(`/api/songs/${venueId}/${songId}`, { data: { fingerprint } });
 export const playNow = (song) => api.post('/api/admin/play-now', song);
 export const getQrCode = (venueId) =>
   `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/qr/${venueId}`;

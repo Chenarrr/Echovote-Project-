@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminSkip, adminPause, adminFilter, getAdminVenue, uploadVenueImage, deleteVenue, searchSongs, addSong, playNow } from '../services/api';
+import { adminSkip, adminPause, adminFilter, getAdminVenue, uploadVenueImage, deleteVenue, searchSongs, addSong, playNow, adminDeleteSong } from '../services/api';
 import useVenue from '../hooks/useVenue';
 import QRDisplay from '../components/QRDisplay';
 import useSocket from '../hooks/useSocket';
@@ -19,6 +19,7 @@ const AdminDashboard = () => {
   const [adminResults, setAdminResults] = useState([]);
   const [adminSearching, setAdminSearching] = useState(false);
   const [adminAdding, setAdminAdding] = useState(null);
+  const [reactions, setReactions] = useState({ fire: 0, meh: 0, dislike: 0 });
   const playerRef = useRef(null);
   const playerInstanceRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -34,6 +35,10 @@ const AdminDashboard = () => {
       if (song && playerInstanceRef.current) {
         playerInstanceRef.current.loadVideoById(song.youtubeId);
       }
+      setReactions({ fire: 0, meh: 0, dislike: 0 });
+    },
+    reaction_update: ({ reaction }) => {
+      setReactions((prev) => ({ ...prev, [reaction]: (prev[reaction] || 0) + 1 }));
     },
   });
 
@@ -172,10 +177,15 @@ const AdminDashboard = () => {
     setAdminAdding(song.youtubeId);
     try {
       await addSong(venueId, song);
-      setAdminResults([]);
-      setAdminQuery('');
+      setAdminResults((prev) => prev.filter((s) => s.youtubeId !== song.youtubeId));
     } catch (err) { alert(err.response?.data?.error || 'Could not add song'); }
     finally { setAdminAdding(null); }
+  };
+
+  const handleDeleteQueueSong = async (songId) => {
+    try {
+      await adminDeleteSong(songId);
+    } catch (err) { alert(err.response?.data?.error || 'Failed to remove song'); }
   };
 
   return (
@@ -276,6 +286,16 @@ const AdminDashboard = () => {
               Explicit filter: {explicitFilter ? 'ON' : 'OFF'}
             </button>
           </div>
+          {(reactions.fire > 0 || reactions.meh > 0 || reactions.dislike > 0) && (
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-surface-700/50">
+              <span className="text-xs text-surface-400 font-medium">Audience mood:</span>
+              <div className="flex gap-3">
+                <span className="text-sm">{'\uD83D\uDD25'} <span className="text-xs text-surface-300 font-medium">{reactions.fire}</span></span>
+                <span className="text-sm">{'\uD83D\uDE10'} <span className="text-xs text-surface-300 font-medium">{reactions.meh}</span></span>
+                <span className="text-sm">{'\uD83D\uDC4E'} <span className="text-xs text-surface-300 font-medium">{reactions.dislike}</span></span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Live Queue */}
@@ -305,6 +325,15 @@ const AdminDashboard = () => {
                       <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
                     </div>
                     <span className="text-accent text-xs font-semibold tabular-nums">{entry.voteCount}</span>
+                    <button
+                      onClick={() => handleDeleteQueueSong(song._id)}
+                      className="text-surface-500 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+                      title="Remove from queue"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   </div>
                 );
               })}
