@@ -221,23 +221,6 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Seed playlist */}
-        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Seed Playlist</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={seedInput}
-              onChange={(e) => setSeedInput(e.target.value)}
-              placeholder="YouTube video IDs, comma separated..."
-              className="flex-1 bg-surface-800 border border-surface-700 rounded-lg px-3.5 py-2 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
-            />
-            <button onClick={handleSeed} className="bg-accent hover:bg-accent-hover text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-              Save
-            </button>
-          </div>
-        </div>
-
         {/* Live Queue */}
         <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -270,6 +253,23 @@ const AdminDashboard = () => {
               })}
             </div>
           )}
+        </div>
+
+        {/* Seed playlist */}
+        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
+          <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Seed Playlist</h2>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={seedInput}
+              onChange={(e) => setSeedInput(e.target.value)}
+              placeholder="YouTube video IDs, comma separated..."
+              className="flex-1 bg-surface-800 border border-surface-700 rounded-lg px-3.5 py-2 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
+            />
+            <button onClick={handleSeed} className="bg-accent hover:bg-accent-hover text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+              Save
+            </button>
+          </div>
         </div>
 
         {/* Danger Zone */}

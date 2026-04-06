@@ -67,7 +67,10 @@ const SearchBar = ({ venueId, onSongAdded }) => {
             <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-surface-700/30 transition-colors">
               <img src={song.thumbnail} alt={song.title} className="w-10 h-10 rounded object-cover flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+                  {song.isExplicit && <span className="flex-shrink-0 text-[10px] font-bold bg-surface-600 text-surface-300 rounded px-1 py-0.5">E</span>}
+                </div>
                 <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
               </div>
               <button

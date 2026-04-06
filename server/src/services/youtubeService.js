@@ -2,7 +2,7 @@ const axios = require('axios');
 const { YOUTUBE_API_KEY } = require('../config/env');
 
 const searchYouTube = async (query) => {
-  const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+  const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
     params: {
       part: 'snippet',
       q: query,
@@ -13,11 +13,29 @@ const searchYouTube = async (query) => {
     },
   });
 
-  return response.data.items.map((item) => ({
+  const items = searchRes.data.items;
+  const videoIds = items.map((i) => i.id.videoId).join(',');
+
+  const detailsRes = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
+    params: {
+      part: 'contentDetails',
+      id: videoIds,
+      key: YOUTUBE_API_KEY,
+    },
+  });
+
+  const explicitSet = new Set(
+    detailsRes.data.items
+      .filter((v) => v.contentDetails?.contentRating?.ytRating === 'ytAgeRestricted')
+      .map((v) => v.id)
+  );
+
+  return items.map((item) => ({
     youtubeId: item.id.videoId,
     title: item.snippet.title,
     thumbnail: item.snippet.thumbnails.medium.url,
     artist: item.snippet.channelTitle,
+    isExplicit: explicitSet.has(item.id.videoId),
   }));
 };
 

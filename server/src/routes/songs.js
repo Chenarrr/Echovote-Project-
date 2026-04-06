@@ -33,14 +33,20 @@ router.get('/:venueId', async (req, res) => {
 router.post('/:venueId', async (req, res) => {
   try {
     const { venueId } = req.params;
-    const { youtubeId, title, thumbnail, artist, addedBy } = req.body;
+    const { youtubeId, title, thumbnail, artist, addedBy, isExplicit = false } = req.body;
 
     if (!youtubeId || !title) {
       return res.status(400).json({ error: 'youtubeId and title are required' });
     }
 
+    const { isExplicit = false } = req.body;
+
     const venue = await Venue.findById(venueId);
     if (!venue) return res.status(404).json({ error: 'Venue not found' });
+
+    if (venue.settings.explicitFilter && isExplicit) {
+      return res.status(403).json({ error: 'Explicit songs are not allowed at this venue' });
+    }
 
     const existing = await ActiveQueue.findOne({ venueId }).populate({
       path: 'songId',
@@ -50,7 +56,7 @@ router.post('/:venueId', async (req, res) => {
       return res.status(409).json({ error: 'Song already in queue' });
     }
 
-    const song = await Song.create({ youtubeId, title, thumbnail, artist, addedBy, venueId });
+    const song = await Song.create({ youtubeId, title, thumbnail, artist, addedBy, isExplicit, venueId });
     const queueEntry = await ActiveQueue.create({ songId: song._id, venueId });
 
     const queue = await ActiveQueue.find({ venueId }).populate('songId').sort({ voteCount: -1 });

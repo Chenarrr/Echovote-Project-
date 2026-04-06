@@ -568,7 +568,7 @@ Fetches the initial queue via REST, then keeps it in sync via `queue_updated`, `
 Admin accounts are protected with TOTP 2FA. The secret is generated during registration using `speakeasy`, and the admin verifies it with their authenticator app before the account is fully activated. Login requires both password and TOTP code.
 
 **Venue branding**
-Each venue can upload a photo that is displayed on both the admin dashboard and the guest voting page, making the experience feel tailored to the specific location.
+Each venue can upload a photo that is displayed on both the admin dashboard and the guest voting page, making the experience feel tailored to the specific location. Images are currently stored on disk in `server/uploads/` with only the path saved in the database — this works fine locally via Docker volumes, but before deploying to production (Render, Fly.io, etc.) you should migrate to cloud storage (e.g. Cloudinary) since hosted filesystems are ephemeral and reset on every deploy.
 
 **Duplicate vote prevention**
 Each `ActiveQueue` document stores a `voterFingerprints` array. Before incrementing, `voteController.js` checks if the fingerprint is already in the array. Fingerprints are generated client-side with `@fingerprintjs/fingerprintjs`.
