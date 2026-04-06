@@ -457,7 +457,7 @@ db.admins.aggregate([
 |---|---|---|---|
 | GET | `/api/songs/search` | `?q=<query>` | Search YouTube Data API v3 |
 | GET | `/api/songs/:venueId` | — | Get active queue sorted by votes desc |
-| POST | `/api/songs/:venueId` | `{ youtubeId, title, thumbnail, artist, addedBy }` | Add song to queue |
+| POST | `/api/songs/:venueId` | `{ youtubeId, title, thumbnail, artist, addedBy, isExplicit? }` | Add song to queue (blocked if explicit filter is ON and song is explicit) |
 
 ### Votes
 
@@ -480,7 +480,7 @@ Returns `409` if fingerprint already voted for that song.
 | POST | `/api/admin/skip` | — | Remove current song, advance to next highest voted |
 | POST | `/api/admin/pause` | — | Toggle `isPlaying` on PlaybackState |
 | POST | `/api/admin/filter` | — | Toggle `explicitFilter` on venue settings |
-| POST | `/api/admin/seed` | `{ seeds: [String] }` | Set weekly seed YouTube video IDs |
+| POST | `/api/admin/play-now` | `{ youtubeId, title, thumbnail, artist }` | Play a song immediately, bypassing the queue |
 | POST | `/api/admin/venue-image` | `multipart/form-data` with `image` field | Upload venue photo (JPG/PNG, max 5MB) |
 | GET | `/api/admin/venue` | — | Get full venue details for authenticated admin |
 | DELETE | `/api/admin/venue` | — | Delete venue, admin account, all songs, and queue (irreversible) |
@@ -509,6 +509,7 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 |---|---|---|
 | `join_venue` | `{ venueId }` | Join the venue's Socket.io room |
 | `cast_vote` | `{ songId, fingerprint, venueId }` | Vote via socket (alternative to REST) |
+| `progress_update` | `{ venueId, currentTime, duration }` | Sent by admin dashboard every second with current playback position |
 
 ### Server → All clients in venue room
 
@@ -518,6 +519,7 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 | `queue_updated` | `{ queue }` | Full sorted queue (after add or vote) |
 | `now_playing` | `{ song }` | Current song changed (skip or auto-advance) |
 | `playback_state` | `{ isPlaying }` | Pause/resume toggled by admin |
+| `playback_progress` | `{ currentTime, duration }` | Current playback position (forwarded from admin to all guests every second) |
 | `vote_error` | `{ error }` | Emitted back to voter socket on failure |
 
 ---
@@ -538,7 +540,8 @@ Admin control panel with:
 - YouTube IFrame Player (auto-plays, triggers skip on song end)
 - Live queue with real-time vote counts
 - QR code display
-- Controls for skip, pause, explicit filter, seed playlist
+- Controls for skip, pause/resume, explicit filter (ON/OFF)
+- Admin song search with "Play now" (instant playback) and "Queue" (add to queue) buttons
 - Danger Zone: delete venue button (asks for confirmation, wipes venue + admin + all data, then redirects to login)
 
 ### Components
@@ -549,7 +552,7 @@ Admin control panel with:
 | `VoteButton` | Upvote button; shows voted state, disables after vote |
 | `SearchBar` | YouTube search with search icon; shows results inline with Add button |
 | `Leaderboard` | Ranked queue list with song count |
-| `NowPlaying` | Fixed bottom bar with animated equalizer bars |
+| `NowPlaying` | Fixed bottom bar with progress bar, elapsed/total time, and animated equalizer bars |
 | `QRDisplay` | QR code with venue link |
 
 ### Hooks
@@ -558,7 +561,7 @@ Admin control panel with:
 Connects to Socket.io, joins the venue room, and binds/unbinds event handlers automatically on mount/unmount.
 
 **`useVenue(venueId)`**
-Fetches the initial queue via REST, then keeps it in sync via `queue_updated`, `update_tally`, and `now_playing` socket events. Returns `{ queue, nowPlaying, loading, refetch }`.
+Fetches the initial queue via REST, then keeps it in sync via `queue_updated`, `update_tally`, `now_playing`, and `playback_progress` socket events. Returns `{ queue, nowPlaying, playbackProgress, loading, refetch }`.
 
 ---
 
@@ -569,6 +572,15 @@ Admin accounts are protected with TOTP 2FA. The secret is generated during regis
 
 **Venue branding**
 Each venue can upload a photo that is displayed on both the admin dashboard and the guest voting page, making the experience feel tailored to the specific location. Images are currently stored on disk in `server/uploads/` with only the path saved in the database — this works fine locally via Docker volumes, but before deploying to production (Render, Fly.io, etc.) you should migrate to cloud storage (e.g. Cloudinary) since hosted filesystems are ephemeral and reset on every deploy.
+
+**Explicit content filter**
+When enabled, the server blocks explicit songs from being added to the queue. YouTube search results include an `isExplicit` flag derived from YouTube's `contentRating.ytRating` (age-restricted content). The admin toggles the filter from the dashboard — the button shows ON/OFF state. Explicit songs are marked with an `E` badge in search results.
+
+**Admin direct playback**
+Admins can search for songs and play them immediately via "Play now", bypassing the queue. The queue remains untouched — queued songs play in order after the admin's pick finishes or is skipped.
+
+**Live playback progress**
+The admin dashboard emits the YouTube player's current time and duration every second via socket (`progress_update`). The server forwards this to all guests in the venue room (`playback_progress`). The guest NowPlaying bar displays a progress bar and elapsed/total time.
 
 **Duplicate vote prevention**
 Each `ActiveQueue` document stores a `voterFingerprints` array. Before incrementing, `voteController.js` checks if the fingerprint is already in the array. Fingerprints are generated client-side with `@fingerprintjs/fingerprintjs`.
