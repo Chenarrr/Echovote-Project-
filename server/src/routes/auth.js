@@ -5,6 +5,7 @@ const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const Admin = require('../models/Admin');
 const Venue = require('../models/Venue');
+const PlaybackState = require('../models/PlaybackState');
 const { JWT_SECRET } = require('../config/env');
 const authMiddleware = require('../middleware/auth');
 
@@ -38,6 +39,8 @@ router.post('/register', async (req, res) => {
       twoFactorSecret: secret.base32,
       twoFactorEnabled: false,
     });
+
+    await PlaybackState.create({ venueId: venue._id, isPlaying: false });
 
     const qrDataUrl = await QRCode.toDataURL(secret.otpauth_url);
 

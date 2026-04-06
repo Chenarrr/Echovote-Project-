@@ -25,9 +25,12 @@ router.use(authMiddleware);
 router.post('/skip', async (req, res) => {
   try {
     const { venueId } = req.admin;
-    const playback = await PlaybackState.findOne({ venueId }).populate('currentSongId');
+    let playback = await PlaybackState.findOne({ venueId }).populate('currentSongId');
+    if (!playback) {
+      playback = await PlaybackState.create({ venueId, isPlaying: false });
+    }
 
-    if (playback && playback.currentSongId) {
+    if (playback.currentSongId) {
       await ActiveQueue.deleteOne({ songId: playback.currentSongId._id, venueId });
     }
 
