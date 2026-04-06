@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const venueId = localStorage.getItem('echovote_venueId');
   const { queue, nowPlaying, loading } = useVenue(venueId);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [explicitFilter, setExplicitFilter] = useState(false);
   const [seedInput, setSeedInput] = useState('');
   const [venue, setVenue] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -31,7 +32,10 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!venueId) { navigate('/admin/login'); return; }
 
-    getAdminVenue().then(({ data }) => setVenue(data)).catch(() => {});
+    getAdminVenue().then(({ data }) => {
+      setVenue(data);
+      setExplicitFilter(data.settings?.explicitFilter || false);
+    }).catch(() => {});
 
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
@@ -53,6 +57,12 @@ const AdminDashboard = () => {
       });
     };
   }, []);
+
+  useEffect(() => {
+    if (nowPlaying && playerInstanceRef.current) {
+      playerInstanceRef.current.loadVideoById(nowPlaying.youtubeId);
+    }
+  }, [nowPlaying]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -100,7 +110,10 @@ const AdminDashboard = () => {
   };
 
   const handleFilter = async () => {
-    try { await adminFilter(); } catch (err) { alert(err.message); }
+    try {
+      const { data } = await adminFilter();
+      setExplicitFilter(data.explicitFilter);
+    } catch (err) { alert(err.message); }
   };
 
   const handleSeed = async () => {
@@ -199,11 +212,11 @@ const AdminDashboard = () => {
               )}
               {isPlaying ? 'Pause' : 'Resume'}
             </button>
-            <button onClick={handleFilter} className="inline-flex items-center gap-2 bg-surface-700/60 hover:bg-surface-700 text-surface-200 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+            <button onClick={handleFilter} className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${explicitFilter ? 'bg-accent/20 border border-accent/40 text-accent' : 'bg-surface-700/60 hover:bg-surface-700 text-surface-200'}`}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                 <path d="M10 1a6 6 0 00-3.815 10.631C7.237 12.5 8 13.443 8 14.456v.644a.75.75 0 00.572.729 6.016 6.016 0 002.856 0A.75.75 0 0012 15.1v-.644c0-1.013.762-1.957 1.815-2.825A6 6 0 0010 1zM8.863 17.414a.75.75 0 00-.226 1.483 9.066 9.066 0 002.726 0 .75.75 0 00-.226-1.483 7.553 7.553 0 01-2.274 0z" />
               </svg>
-              Toggle explicit filter
+              Explicit filter: {explicitFilter ? 'ON' : 'OFF'}
             </button>
           </div>
         </div>
@@ -225,25 +238,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Danger Zone */}
-        <div className="bg-surface-800/60 border border-red-900/40 rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-red-400/80 uppercase tracking-wider mb-3">Danger Zone</h2>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-surface-200">Delete this venue</p>
-              <p className="text-xs text-surface-500 mt-0.5">Permanently deletes the venue, your account, all songs, and the queue.</p>
-            </div>
-            <button
-              onClick={handleDeleteVenue}
-              className="bg-red-600/20 hover:bg-red-600 border border-red-600/50 text-red-400 hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            >
-              Delete venue
-            </button>
-          </div>
-        </div>
-
         {/* Live Queue */}
-        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4">
+        <div className="bg-surface-800/60 border border-surface-700/50 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs font-semibold text-surface-400 uppercase tracking-wider">Live Queue</h2>
             {queue.length > 0 && (
@@ -274,6 +270,23 @@ const AdminDashboard = () => {
               })}
             </div>
           )}
+        </div>
+
+        {/* Danger Zone */}
+        <div className="bg-surface-800/60 border border-red-900/40 rounded-lg p-4">
+          <h2 className="text-xs font-semibold text-red-400/80 uppercase tracking-wider mb-3">Danger Zone</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-surface-200">Delete this venue</p>
+              <p className="text-xs text-surface-500 mt-0.5">Permanently deletes the venue, your account, all songs, and the queue.</p>
+            </div>
+            <button
+              onClick={handleDeleteVenue}
+              className="bg-red-600/20 hover:bg-red-600 border border-red-600/50 text-red-400 hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+            >
+              Delete venue
+            </button>
+          </div>
         </div>
       </div>
     </div>

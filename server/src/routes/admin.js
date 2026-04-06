@@ -64,7 +64,7 @@ router.post('/pause', async (req, res) => {
     const playback = await PlaybackState.findOneAndUpdate(
       { venueId },
       [{ $set: { isPlaying: { $not: '$isPlaying' } } }],
-      { new: true }
+      { new: true, upsert: true }
     );
     emitToVenue(venueId, 'playback_state', { isPlaying: playback.isPlaying });
     res.json({ isPlaying: playback.isPlaying });
