@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children }) => {
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/venue/:id" element={<VenuePage />} />
         <Route path="/admin/login" element={<AdminLogin />} />

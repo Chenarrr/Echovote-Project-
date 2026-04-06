@@ -98,6 +98,7 @@ const AdminLogin = () => {
                     value={form.venueName}
                     onChange={(e) => setForm({ ...form, venueName: e.target.value })}
                     required
+                    autoComplete="organization"
                     className="w-full bg-surface-800 border border-surface-700 rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
                   />
                 </div>
@@ -110,6 +111,7 @@ const AdminLogin = () => {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required
+                  autoComplete="email"
                   className="w-full bg-surface-800 border border-surface-700 rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
                 />
               </div>
@@ -121,6 +123,7 @@ const AdminLogin = () => {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   className="w-full bg-surface-800 border border-surface-700 rounded-lg px-3.5 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:border-accent transition-colors"
                 />
               </div>

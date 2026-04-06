@@ -14,7 +14,7 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
         className="w-11 h-11 rounded object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm text-surface-100 truncate" dangerouslySetInnerHTML={{ __html: song.title }} />
+        <p className="font-medium text-sm text-surface-100 truncate">{song.title}</p>
         <p className="text-xs text-surface-400 truncate mt-0.5">{song.artist}</p>
       </div>
       <VoteButton count={voteCount} voted={voted} onClick={() => onVote(entry._id, song._id)} onUnvote={() => onUnvote(entry._id, song._id)} />

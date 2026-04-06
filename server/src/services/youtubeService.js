@@ -1,6 +1,14 @@
 const axios = require('axios');
 const { YOUTUBE_API_KEY } = require('../config/env');
 
+const decodeHtmlEntities = (str) =>
+  str
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+
 const searchYouTube = async (query) => {
   const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
     params: {
@@ -32,9 +40,9 @@ const searchYouTube = async (query) => {
 
   return items.map((item) => ({
     youtubeId: item.id.videoId,
-    title: item.snippet.title,
+    title: decodeHtmlEntities(item.snippet.title),
     thumbnail: item.snippet.thumbnails.medium.url,
-    artist: item.snippet.channelTitle,
+    artist: decodeHtmlEntities(item.snippet.channelTitle),
     isExplicit: explicitSet.has(item.id.videoId),
   }));
 };

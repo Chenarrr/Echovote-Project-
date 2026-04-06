@@ -47,7 +47,11 @@ router.post('/:venueId', async (req, res) => {
     }
 
     if (addedBy) {
-      const userSongCount = await Song.countDocuments({ venueId, addedBy });
+      const userSongs = await Song.find({ venueId, addedBy }, '_id');
+      const userSongCount = await ActiveQueue.countDocuments({
+        venueId,
+        songId: { $in: userSongs.map((s) => s._id) },
+      });
       if (userSongCount >= 2) {
         return res.status(403).json({ error: 'You can only add up to 2 songs. Remove one to add another.' });
       }

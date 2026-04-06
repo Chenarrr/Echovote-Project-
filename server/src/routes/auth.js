@@ -8,10 +8,11 @@ const Venue = require('../models/Venue');
 const PlaybackState = require('../models/PlaybackState');
 const { JWT_SECRET } = require('../config/env');
 const authMiddleware = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { email, password, venueName } = req.body;
 
@@ -91,7 +92,7 @@ router.post('/verify-2fa-setup', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password, totpCode } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'email and password required' });

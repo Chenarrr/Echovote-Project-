@@ -2,6 +2,7 @@ const express = require('express');
 const { castVote } = require('../services/voteController');
 const ActiveQueue = require('../models/ActiveQueue');
 const { voteLimiter } = require('../middleware/rateLimiter');
+const { emitToVenue } = require('../services/socketManager');
 
 const router = express.Router();
 
@@ -46,7 +47,6 @@ router.delete('/:songId', async (req, res) => {
     entry.voteCount = Math.max(0, entry.voteCount - 1);
     await entry.save();
 
-    const { emitToVenue } = require('../services/socketManager');
     emitToVenue(entry.venueId.toString(), 'update_tally', { songId, newCount: entry.voteCount });
 
     const queue = await ActiveQueue.find({ venueId: entry.venueId })
