@@ -7,6 +7,7 @@ const createApp = () => {
   app.use('/api/songs', require('../../src/routes/songs'));
   app.use('/api/votes', require('../../src/routes/votes'));
   app.use('/api/admin', require('../../src/routes/admin'));
+  app.use('/api/qr', require('../../src/routes/qr'));
   return app;
 };
 

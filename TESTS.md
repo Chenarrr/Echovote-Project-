@@ -3,7 +3,7 @@
 **Run date:** 2026-04-08  
 **Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server + Cypress 15  
 **Command:** `npm test` (`jest --runInBand`) — from `/server`  
-**Overall Jest Result: 79 / 79 PASSED — 0 FAILED**  
+**Overall Jest Result: 114 / 114 PASSED — 0 FAILED**  
 **Cypress E2E:** 8 specs WRITTEN but NOT EXECUTED (see §5 for honest disclosure)
 
 ---
@@ -17,10 +17,13 @@
 | WebSocket Tests                        | 5     | 5      | 0      | YES       |
 | Equivalence Partitioning (EP)          | 18    | 18     | 0      | YES       |
 | Boundary Value Analysis (BVA)          | 14    | 14     | 0      | YES       |
+| Decision Table (DT)                    | 8     | 8      | 0      | YES       |
+| State Transition (STT)                 | 11    | 11     | 0      | YES       |
+| API Contract                           | 16    | 16     | 0      | YES       |
 | E2E Cypress                            | 8     | —      | —      | **NO**    |
-| **Jest total**                         | **79**| **79** | **0**  |           |
+| **Jest total**                         | **114**| **114**| **0** |           |
 
-Total Jest suite runtime: ~9.5s
+Total Jest suite runtime: ~24s
 
 ---
 
@@ -361,6 +364,102 @@ npx cypress open
 
 ---
 
+# 6. Decision Table Tests — `__tests__/dt/decisionTable.test.js` (8/8 PASSED)
+
+**What we're testing:** `POST /api/votes/:songId` across the full 2×2×2 decision table of input combinations: *Song Exists*, *Fingerprint is new*, *Rate limiter OK*. The aim is to prove that when multiple rules overlap, the stated precedence holds — specifically, that the rate limiter runs first and always wins when tripped.
+
+**What we're using:** Jest 30 + Supertest + mongodb-memory-server. The rate limiter is mocked via a mutable state object (`rateLimiterMock.__state.rateOk = true|false`) so each row of the table can independently toggle the limiter without touching `express-rate-limit`'s MemoryStore. `socketManager` is a no-op mock.
+
+**Why:** EP + BVA already cover individual input classes, but they don't prove anything about *interactions* between those inputs. Decision tables are the cheapest way to catch the classic "which rule wins?" bug — e.g. does the rate limiter run after the DB lookup (wasting a query on a limited request) or before? This suite locks that ordering contract in place.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/dt --runInBand
+```
+
+| ID    | Song Exists | FP New | Rate OK | Expected                | Status |
+|-------|-------------|--------|---------|-------------------------|--------|
+| DT-01 | Y           | Y      | Y       | 200 (vote accepted)     | PASS   |
+| DT-02 | Y           | Y      | N       | 429 (rate limited)      | PASS   |
+| DT-03 | Y           | N      | Y       | 409 (already voted)     | PASS   |
+| DT-04 | Y           | N      | N       | 429 (rate limited wins) | PASS   |
+| DT-05 | N           | Y      | Y       | 404 (song not found)    | PASS   |
+| DT-06 | N           | Y      | N       | 429 (rate limited wins) | PASS   |
+| DT-07 | N           | N      | Y       | 404 (song not found)    | PASS   |
+| DT-08 | N           | N      | N       | 429 (rate limited wins) | PASS   |
+
+**Key finding confirmed by DT-04/06/08:** the `voteLimiter` middleware executes *before* the DB lookup in `votes.js:9`, so a rate-limited request never touches MongoDB — a small but meaningful performance + abuse-resistance property.
+
+---
+
+# 7. State Transition Tests — `__tests__/stt/stateTransition.test.js` (11/11 PASSED)
+
+**What we're testing:** The admin auth finite state machine, whose states are:
+```
+UNAUTHENTICATED → PASSWORD_VERIFIED → AUTHENTICATED
+                  ↘ REJECTED (recoverable via retry)
+```
+Every valid + invalid transition, plus happy-path, full-reject, recovery, and full-cycle sequences.
+
+**What we're using:** Jest 30 + Supertest + `speakeasy` (for real TOTP generation) + mongodb-memory-server. The tests drive a small `AuthFSM` helper class that wraps the **real** `/api/auth/login` and `/api/auth/verify-2fa-setup` endpoints — state is computed from actual HTTP responses, never fabricated. `logout` and `retry` are modeled as client-only FSM transitions (the app really does clear localStorage and let the user restart) so they have no endpoint call.
+
+**Why:** Auth bugs show up as "you can reach state X without going through Y" — exactly what state-transition testing is designed to catch. For example, STT-07 proves that sending a valid TOTP while in REJECTED does not silently promote the user to AUTHENTICATED. Without a state-based suite, each auth endpoint test would have to guess what state the app is in; the FSM makes it explicit.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/stt --runInBand
+```
+
+| ID      | Current State        | Event                     | Next State        | Status |
+|---------|----------------------|---------------------------|-------------------|--------|
+| STT-01  | UNAUTHENTICATED      | validPassword             | PASSWORD_VERIFIED | PASS   |
+| STT-02  | UNAUTHENTICATED      | invalidPassword           | REJECTED          | PASS   |
+| STT-03  | PASSWORD_VERIFIED    | validTOTP                 | AUTHENTICATED     | PASS   |
+| STT-04  | PASSWORD_VERIFIED    | invalidTOTP               | REJECTED          | PASS   |
+| STT-05  | AUTHENTICATED        | logout                    | UNAUTHENTICATED   | PASS   |
+| STT-06  | REJECTED             | retry                     | UNAUTHENTICATED   | PASS   |
+| STT-07  | REJECTED             | any other event           | REJECTED          | PASS   |
+| STT-08  | full happy path      | pass → TOTP               | AUTHENTICATED     | PASS   |
+| STT-09  | full reject          | pass → badTOTP            | REJECTED          | PASS   |
+| STT-10  | recovery             | reject → retry → success  | AUTHENTICATED     | PASS   |
+| STT-11  | full cycle           | login → logout → login    | AUTHENTICATED     | PASS   |
+
+---
+
+# 8. API Contract Tests — `__tests__/contract/apiContract.test.js` (16/16 PASSED)
+
+**What we're testing:** Every externally-facing HTTP endpoint, once, for its documented status code and minimum response shape. This suite treats each endpoint as an opaque contract — it doesn't care about side effects or queue ordering, only that the wire-level promise is kept.
+
+**What we're using:** Jest 30 + Supertest + mongodb-memory-server + `speakeasy` (for real JWT-backed auth) + `jest.mock('axios')` for the one YouTube-dependent endpoint. `socketManager` and `rateLimiter` are no-op mocks. The QR endpoint is mounted into the helper app and asserted against its real `image/png` output.
+
+**Why:** The unit/integration suites are organised by *module*; this suite is organised by *endpoint*. That gives us a single place to verify that every public route still honours its contract after a refactor — a fast "API smoke" that catches accidental status-code drift (e.g. a 403 silently becoming a 400) without having to re-read every feature test.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/contract --runInBand
+```
+
+| ID      | Endpoint                               | Scenario                       | Expected              | Status |
+|---------|----------------------------------------|--------------------------------|-----------------------|--------|
+| API-01  | POST /api/auth/register                | Valid registration             | 201 + qrCode + secret | PASS   |
+| API-02  | POST /api/auth/login                   | Valid creds + TOTP             | 200 + token           | PASS   |
+| API-03  | POST /api/auth/login                   | Wrong password                 | 401                   | PASS   |
+| API-04  | GET  /api/songs/search?q=test          | Valid search (stubbed YouTube) | 200 + array           | PASS   |
+| API-05  | POST /api/songs/:venueId               | Valid song add                 | 201                   | PASS   |
+| API-06  | POST /api/songs/:venueId               | Explicit + filter ON           | 403                   | PASS   |
+| API-07  | POST /api/songs/:venueId               | 3rd song (limit)               | 403                   | PASS   |
+| API-08  | DELETE /api/songs/:venueId/:songId     | Own song                       | 200 + success:true    | PASS   |
+| API-09  | DELETE /api/songs/:venueId/:songId     | Other's song                   | 403                   | PASS   |
+| API-10  | POST /api/votes/:songId                | Valid vote                     | 200 + voteCount=1     | PASS   |
+| API-11  | DELETE /api/votes/:songId              | Vote undo                      | 200 + voteCount=0     | PASS   |
+| API-12  | DELETE /api/votes/:songId              | Undo without prior vote        | 400                   | PASS   |
+| API-13  | POST /api/admin/play-now               | Admin direct play              | 200 + song            | PASS   |
+| API-14  | DELETE /api/admin/queue/:songId        | Admin queue removal            | 200 + success:true    | PASS   |
+| API-15  | DELETE /api/admin/venue                | Venue deletion                 | 200 + success:true    | PASS   |
+| API-16  | GET  /api/qr/:venueId                  | QR code PNG                    | 200 + image/png body  | PASS   |
+
+---
+
 ## What Was Changed in Production Code
 
 | File | Change | Reason |
@@ -392,6 +491,9 @@ No other production code was modified to make tests pass.
 | `__tests__/integration/websocket.test.js` | WS-01, 02, 03, 04, 05 |
 | `__tests__/ep/equivalencePartitioning.test.js` | EP-VT-01..05, EP-SQ-01..04, EP-EM-01..03, EP-EX-01..03, EP-DL-01..03 |
 | `__tests__/bva/boundaryValueAnalysis.test.js` | BVA-RL-01..05, BVA-SL-01..04, BVA-VC-01..03, BVA-PW-01..02 |
+| `__tests__/dt/decisionTable.test.js` | DT-01..08 (vote endpoint decision table) |
+| `__tests__/stt/stateTransition.test.js` | STT-01..11 (admin auth FSM) |
+| `__tests__/contract/apiContract.test.js` | API-01..16 (endpoint contract smoke) |
 | `client/cypress.config.js` | Cypress config (baseUrl → Vite dev server) |
 | `client/cypress/e2e/venue.cy.js` | E2E-01..05 (written, not executed) |
 | `client/cypress/e2e/admin.cy.js` | E2E-06..08 (written, not executed) |
