@@ -8,4 +8,10 @@ export default defineConfig({
     port: 5173,
     allowedHosts: ['host.docker.internal'],
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.js'],
+    css: false,
+  },
 });

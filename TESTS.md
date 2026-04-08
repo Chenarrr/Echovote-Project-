@@ -1,9 +1,13 @@
 # EchoVote — Test Results
 
 **Run date:** 2026-04-08  
-**Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server + Cypress 15  
-**Command:** `npm test` (`jest --runInBand`) — from `/server`  
-**Overall Jest Result: 114 / 114 PASSED — 0 FAILED**  
+**Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server + Vitest 2 + React Testing Library + Cypress 15  
+**Commands:**
+- Server: `npm test` from `/server` (`jest --runInBand`)
+- Client: `npm test` from `/client` (`vitest run`)
+- E2E: `npm run dev` in `/client` + `npx cypress run` (manual)
+
+**Overall Result: 144 / 144 executed tests PASSED** (132 server Jest + 12 client Vitest)  
 **Cypress E2E:** 8 specs WRITTEN but NOT EXECUTED (see §5 for honest disclosure)
 
 ---
@@ -20,10 +24,16 @@
 | Decision Table (DT)                    | 8     | 8      | 0      | YES       |
 | State Transition (STT)                 | 11    | 11     | 0      | YES       |
 | API Contract                           | 16    | 16     | 0      | YES       |
+| Concurrency / Race                     | 3     | 3      | 0      | YES       |
+| Security / Negative Auth               | 6     | 6      | 0      | YES       |
+| Error Paths                            | 6     | 6      | 0      | YES       |
+| Socket Reconnection                    | 3     | 3      | 0      | YES       |
+| **Server Jest subtotal**               | **132**| **132**| **0** |           |
+| Client component (Vitest + RTL)        | 12    | 12     | 0      | YES       |
 | E2E Cypress                            | 8     | —      | —      | **NO**    |
-| **Jest total**                         | **114**| **114**| **0** |           |
+| **Grand total (executed)**             | **144**| **144**| **0** |           |
 
-Total Jest suite runtime: ~24s
+Server Jest runtime: ~26s. Client Vitest runtime: ~1s.
 
 ---
 
@@ -460,12 +470,151 @@ npx jest __tests__/contract --runInBand
 
 ---
 
+# 9. Concurrency / Race Tests — `__tests__/race/concurrency.test.js` (3/3 PASSED)
+
+**What we're testing:** That the vote path is safe under simultaneous requests — the classic read-modify-write race when two people press vote on the same song at the same instant.
+
+**What we're using:** Jest 30 + Supertest + mongodb-memory-server. Tests fire parallel requests with `Promise.all(...)` and assert data-level invariants (`voteCount === voterFingerprints.length`) rather than just HTTP status.
+
+**Why:** Before this suite existed, `voteController.castVote` used `findOne → mutate → save`. RACE-01 with 10 concurrent voters would frequently land on `voteCount < voterFingerprints.length`. The fix — an atomic `findOneAndUpdate` with a `$ne` filter — is now locked in by these tests (see §"What Was Changed in Production Code"). For a venue where 20–50 voters may hit the same song in the same second, this is the single most important correctness property in the app.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/race --runInBand
+```
+
+| ID      | Scenario                                                      | Status |
+|---------|---------------------------------------------------------------|--------|
+| RACE-01 | 10 concurrent votes from distinct fingerprints → count == fps | PASS   |
+| RACE-02 | Same fingerprint voting twice in parallel → exactly 200+409   | PASS   |
+| RACE-03 | Vote racing with queue-entry deletion → 200 or 404, never 500 | PASS   |
+
+---
+
+# 10. Security / Negative Auth — `__tests__/security/negativeAuth.test.js` (6/6 PASSED)
+
+**What we're testing:** That every way a malicious client can try to bypass the auth middleware is rejected with 401, and that the login endpoint does not leak account-existence information.
+
+**What we're using:** Jest 30 + Supertest + real `jsonwebtoken` (to forge tokens with expired / tampered / wrong-secret signatures) + real `bcryptjs`.
+
+**Why:** Auth bugs are the ones that make headlines. This suite is the "can a hostile user get in?" check. SEC-04 in particular proves that cross-venue token reuse cannot silently mutate another tenant's queue — critical for a multi-venue deployment. SEC-05 closes a common user-enumeration side-channel.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/security --runInBand
+```
+
+| ID      | Attack / scenario                                              | Expected          | Status |
+|---------|----------------------------------------------------------------|-------------------|--------|
+| SEC-01  | Expired JWT                                                    | 401               | PASS   |
+| SEC-02  | JWT signed with wrong secret (tampered)                        | 401               | PASS   |
+| SEC-03  | Authorization header without `Bearer ` prefix                  | 401               | PASS   |
+| SEC-04  | Token for venue A cannot delete queue rows of venue B          | unchanged DB      | PASS   |
+| SEC-05  | Login: unknown email vs wrong password return identical error  | no enumeration    | PASS   |
+| SEC-06  | Garbage token after valid `Bearer ` prefix                     | 401               | PASS   |
+
+---
+
+# 11. Error Paths — `__tests__/errors/errorPaths.test.js` (6/6 PASSED)
+
+**What we're testing:** Ugly-weather behaviour — external API failures, malformed request bodies, oversized payloads, invalid params, DB failures mid-request, and stale-state scenarios. The goal is "does the server handle this gracefully, or does it crash / leak stack traces?"
+
+**What we're using:** Jest 30 + Supertest + mongodb-memory-server + `jest.mock('axios')` for YouTube failures + `jest.spyOn(ActiveQueue, 'findOneAndUpdate')` to simulate DB failures.
+
+**Why:** Happy-path tests can't tell you whether the process survives a flaky dependency. ERR-05 in particular verifies that after a simulated DB error, the *next* request still succeeds — proving there's no global state that gets corrupted by an exception.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/errors --runInBand
+```
+
+| ID     | Scenario                                                      | Expected             | Status |
+|--------|---------------------------------------------------------------|----------------------|--------|
+| ERR-01 | YouTube API throws 500 during search                          | 500 + structured err | PASS   |
+| ERR-02 | Malformed JSON body on POST                                   | 400                  | PASS   |
+| ERR-03 | JSON body exceeds express.json `{ limit }`                    | 413                  | PASS   |
+| ERR-04 | Invalid ObjectId in `/api/votes/:songId`                      | 400/404/500 + err    | PASS   |
+| ERR-05 | DB throws mid-request → error returned, next request still OK | 500 → 200            | PASS   |
+| ERR-06 | Queue entry deleted between handler entry and vote            | 404                  | PASS   |
+
+---
+
+# 12. Socket Reconnection — `__tests__/integration/socketReconnect.test.js` (3/3 PASSED)
+
+**What we're testing:** Client auto-reconnection and room re-joining after a forced disconnect, which simulates flaky venue wifi. Verifies the contract between server and client: Socket.IO server rooms are per-socket-id and NOT persisted across reconnects, so the client is responsible for re-emitting `join_venue` after reconnect.
+
+**What we're using:** A real HTTP server + real Socket.IO server + real `socket.io-client`, just like the existing WS suite. Disconnects are forced via `client.io.engine.close()` which triggers the client's auto-reconnect logic.
+
+**Why:** Venue wifi drops constantly. If clients silently stop receiving updates after a reconnect because nobody re-joined the room, the UI goes stale without any error. SR-02 locks in the expected "must re-join" contract; SR-03 verifies the full resync pattern works end-to-end.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/integration/socketReconnect --runInBand
+```
+
+| ID    | Scenario                                                             | Status |
+|-------|----------------------------------------------------------------------|--------|
+| SR-01 | Forced disconnect triggers auto-reconnect                            | PASS   |
+| SR-02 | After reconnect, broadcasts do NOT arrive until client re-joins room | PASS   |
+| SR-03 | After reconnect + re-join, queue_updated broadcasts resume           | PASS   |
+
+---
+
+# 13. React Component Tests (Vitest + RTL) — `client/src/test/*.test.jsx` (12/12 PASSED)
+
+**What we're testing:** The user-facing React components in isolation — rendered output, prop-driven behaviour, and event handlers.
+
+**What we're using:** Vitest 2 (Vite-native test runner, Jest-compatible API) + jsdom + `@testing-library/react` + `@testing-library/user-event` + `@testing-library/jest-dom`. The `services/api` module is mocked with `vi.mock` so tests never hit the network.
+
+**Why:** Until this suite existed, the frontend had ZERO automated coverage below the Cypress level. Cypress is great for whole-page flows but expensive to run and slow to iterate. RTL tests are fast (~1 second for all 12) and catch the most common frontend bugs — broken callbacks, stale state, missing props, failed error-surfacing — without needing a browser.
+
+**Command to run (from `/client`):**
+```
+npm test      # one-shot
+npm run test:watch   # watch mode
+```
+
+### VoteButton — `src/test/VoteButton.test.jsx`
+| ID      | Scenario                                              | Status |
+|---------|-------------------------------------------------------|--------|
+| RTL-01  | Renders the passed `count`                            | PASS   |
+| RTL-02  | Unvoted click → `onClick` fires, not `onUnvote`       | PASS   |
+| RTL-03  | Voted click → `onUnvote` fires, not `onClick`         | PASS   |
+
+### SearchBar — `src/test/SearchBar.test.jsx`
+| ID      | Scenario                                                               | Status |
+|---------|------------------------------------------------------------------------|--------|
+| RTL-04  | Typing + submit calls `searchSongs`, renders results                   | PASS   |
+| RTL-05  | "+ Add" calls `addSong` with fingerprint, removes song from results    | PASS   |
+| RTL-06  | `addSong` failure surfaces server error via `window.alert`             | PASS   |
+
+### Leaderboard — `src/test/Leaderboard.test.jsx`
+| ID      | Scenario                                              | Status |
+|---------|-------------------------------------------------------|--------|
+| RTL-07  | Empty queue → "The stage is empty" empty state        | PASS   |
+| RTL-08  | Populated queue → one row per entry + counter         | PASS   |
+
+### SongCard — `src/test/SongCard.test.jsx`
+| ID      | Scenario                                                          | Status |
+|---------|-------------------------------------------------------------------|--------|
+| RTL-09  | Renders title/artist/count; delete button only when `canDelete`   | PASS   |
+| RTL-10  | Vote click fires `onVote(entryId, songId)`                        | PASS   |
+
+### NowPlaying — `src/test/NowPlaying.test.jsx`
+| ID      | Scenario                                                | Status |
+|---------|---------------------------------------------------------|--------|
+| RTL-11  | `song={null}` renders nothing                           | PASS   |
+| RTL-12  | Renders title + `m:ss` time, reaction click fires handler | PASS   |
+
+---
+
 ## What Was Changed in Production Code
 
 | File | Change | Reason |
 |------|--------|--------|
 | `src/services/voteController.js` | Added `undoVote(songId, fingerprint, venueId)` | Tests UT-13/14/15 target the controller, but undo logic was inline in the route |
 | `src/routes/votes.js` | DELETE handler now calls `undoVote()` instead of inline logic | Keeps route thin, consistent with castVote pattern |
+| `src/services/voteController.js` | `castVote` + `undoVote` refactored from `findOne → mutate → save` to atomic `findOneAndUpdate` with a conditional filter | Fixes a real race condition exposed by RACE-01: under concurrent votes the old code could drop votes (`voteCount < voterFingerprints.length`). The atomic path is both race-safe and roughly one round-trip faster. |
 
 No other production code was modified to make tests pass.
 
@@ -494,6 +643,17 @@ No other production code was modified to make tests pass.
 | `__tests__/dt/decisionTable.test.js` | DT-01..08 (vote endpoint decision table) |
 | `__tests__/stt/stateTransition.test.js` | STT-01..11 (admin auth FSM) |
 | `__tests__/contract/apiContract.test.js` | API-01..16 (endpoint contract smoke) |
+| `__tests__/race/concurrency.test.js` | RACE-01..03 (atomic vote path) |
+| `__tests__/security/negativeAuth.test.js` | SEC-01..06 (auth hardening) |
+| `__tests__/errors/errorPaths.test.js` | ERR-01..06 (ugly-weather) |
+| `__tests__/integration/socketReconnect.test.js` | SR-01..03 (flaky wifi) |
+| `client/vite.config.js` | Added `test: { environment: 'jsdom', setupFiles: [...] }` block for Vitest |
+| `client/src/test/setup.js` | RTL setup (`@testing-library/jest-dom/vitest` + auto-cleanup) |
+| `client/src/test/VoteButton.test.jsx` | RTL-01..03 |
+| `client/src/test/SearchBar.test.jsx` | RTL-04..06 |
+| `client/src/test/Leaderboard.test.jsx` | RTL-07..08 |
+| `client/src/test/SongCard.test.jsx` | RTL-09..10 |
+| `client/src/test/NowPlaying.test.jsx` | RTL-11..12 |
 | `client/cypress.config.js` | Cypress config (baseUrl → Vite dev server) |
 | `client/cypress/e2e/venue.cy.js` | E2E-01..05 (written, not executed) |
 | `client/cypress/e2e/admin.cy.js` | E2E-06..08 (written, not executed) |

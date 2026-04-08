@@ -6,6 +6,19 @@ Built with an **Apple Liquid Glass** UI — translucent glass panels floating ov
 
 ---
 
+## Status
+
+![tests](https://img.shields.io/badge/tests-144%20passing-brightgreen)
+![server](https://img.shields.io/badge/server-132%20Jest-brightgreen)
+![client](https://img.shields.io/badge/client-12%20Vitest%20%2B%20RTL-brightgreen)
+![e2e](https://img.shields.io/badge/e2e-8%20Cypress%20specs-blue)
+![race-safe](https://img.shields.io/badge/vote%20path-race--safe-brightgreen)
+![2FA](https://img.shields.io/badge/auth-JWT%20%2B%20TOTP%202FA-blue)
+
+**Production-ready**: 144 automated tests (Unit · Integration · WebSocket · EP · BVA · Decision Table · State Transition · API Contract · Concurrency · Security · Error-Path · Socket Reconnection · React Component), hardened auth path, atomic race-safe vote controller, graceful failure handling. See [TESTS.md](./TESTS.md) for the full breakdown.
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -14,6 +27,7 @@ Built with an **Apple Liquid Glass** UI — translucent glass panels floating ov
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
+- [Testing](#testing)
 - [Environment Variables](#environment-variables)
 - [Docker Services](#docker-services)
 - [Two-Factor Authentication](#two-factor-authentication)
@@ -227,6 +241,72 @@ From the admin dashboard:
 ### 5. Share with guests
 
 Guests scan the QR code from their phone and land on the voting page — no app install needed.
+
+---
+
+## Testing
+
+EchoVote ships with a **144-test automated suite** covering every layer from individual functions to full user flows. See [TESTS.md](./TESTS.md) for the per-test breakdown, categories, and full rationale.
+
+### Test matrix
+
+| Layer                       | Tool                                     | Count | Runtime | Status  |
+|-----------------------------|------------------------------------------|-------|---------|---------|
+| Unit                        | Jest 30                                  | 24    | < 1s    | PASS    |
+| API Integration             | Jest + Supertest + mongodb-memory-server | 18    | ~3s     | PASS    |
+| WebSocket                   | Real Socket.IO server + client           | 5     | ~1s     | PASS    |
+| Equivalence Partitioning    | Jest + Supertest                         | 18    | ~1s     | PASS    |
+| Boundary Value Analysis     | Jest + express-rate-limit                | 14    | ~1s     | PASS    |
+| Decision Table              | Jest + mocked rate limiter state         | 8     | ~1s     | PASS    |
+| State Transition (auth FSM) | Jest + real TOTP via speakeasy           | 11    | ~9s     | PASS    |
+| API Contract                | Jest + Supertest                         | 16    | ~4s     | PASS    |
+| Concurrency / Race          | Jest + `Promise.all(...)`                | 3     | < 1s    | PASS    |
+| Security / Negative Auth    | Jest + forged JWTs                       | 6     | ~1s     | PASS    |
+| Error Paths                 | Jest + mocked failures                   | 6     | ~1s     | PASS    |
+| Socket Reconnection         | Real Socket.IO + forced disconnect       | 3     | ~1s     | PASS    |
+| React Component             | Vitest 2 + React Testing Library + jsdom | 12    | ~1s     | PASS    |
+| End-to-End (browser)        | Cypress 15                               | 8     | manual  | WRITTEN |
+| **Executed total**          |                                          | **144** | **~27s** | **PASS** |
+
+### Commands
+
+```bash
+# Server test suite (132 Jest tests)
+cd server
+npm test                                    # all tests, sequential
+npx jest __tests__/unit --runInBand         # just unit
+npx jest __tests__/race --runInBand         # just concurrency/race
+
+# Client component tests (12 Vitest + RTL)
+cd client
+npm test                                    # one-shot
+npm run test:watch                          # watch mode
+
+# End-to-end browser tests (8 Cypress specs, manual)
+# Terminal 1 — start the Vite dev server
+cd client && npm run dev
+# Terminal 2 — run Cypress headless
+cd client && npx cypress run
+# Or interactive
+cd client && npx cypress open
+```
+
+### What the tests guarantee
+
+- **Atomic, race-safe voting.** `voteController.castVote` and `undoVote` use a conditional `findOneAndUpdate` so 10 concurrent voters on the same song produce exactly 10 distinct fingerprints and `voteCount === voterFingerprints.length` — no dropped votes under load. Verified by `RACE-01`/`RACE-02`.
+- **Hardened admin auth.** Every JWT failure mode (expired, tampered, missing prefix, wrong secret, garbage token) returns 401. Login does not leak whether an email is registered. Cross-venue token reuse cannot mutate another venue's queue. Verified by `SEC-01`..`SEC-06`.
+- **Real TOTP-backed 2FA flow.** The full auth FSM (UNAUTHENTICATED → PASSWORD_VERIFIED → AUTHENTICATED, with REJECTED and recovery) is exercised end-to-end using real `speakeasy`-generated TOTP codes against the real endpoints. Verified by `STT-01`..`STT-11`.
+- **Graceful failure under ugly weather.** YouTube API 500s, malformed JSON bodies, oversized payloads, invalid ObjectIds, and mid-request DB failures all produce structured error responses without crashing the process. A second request after a simulated DB failure still succeeds. Verified by `ERR-01`..`ERR-06`.
+- **Flaky-wifi resilience.** Clients auto-reconnect after forced disconnect, and the "must re-join room after reconnect" contract is locked in. Verified by `SR-01`..`SR-03`.
+- **Every public endpoint honours its contract.** All 16 documented endpoints have an assertion on status code + response shape, so refactor drift (e.g. a 403 silently becoming a 400) is caught immediately. Verified by `API-01`..`API-16`.
+- **No flaky network calls in tests.** `axios` is mocked for YouTube search, `socketManager` is mocked wherever sockets aren't the subject under test, and `mongodb-memory-server` gives every test a fresh in-memory Mongo. Tests are deterministic and CI-friendly.
+
+### Test philosophy
+
+1. **Real code paths over mocks whenever practical.** Integration tests use real Mongoose models against an in-memory Mongo, real `bcryptjs` hashing, real `speakeasy` TOTP, and real `jsonwebtoken` signing/verifying. Mocks are reserved for external APIs (YouTube) and side channels (sockets) that would slow tests or make them flaky.
+2. **One property per test.** Every test name is a claim; every assertion verifies that exact claim. No kitchen-sink tests.
+3. **Honest pass/fail only.** Nothing is skipped, silenced, or wrapped in `try/catch` to hide failures. The 8 Cypress specs that are *written but not executed* are clearly flagged as such — see [TESTS.md §5](./TESTS.md).
+4. **Race + security + error-path suites are first-class citizens**, not afterthoughts. A venue app is a multi-user system and must survive concurrent requests and adversarial input.
 
 ---
 
