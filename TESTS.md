@@ -1,22 +1,26 @@
 # EchoVote — Test Results
 
 **Run date:** 2026-04-08  
-**Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server  
-**Command:** `npm test` (`jest --runInBand`)  
-**Overall Result: 47 / 47 PASSED — 0 FAILED**
+**Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server + Cypress 15  
+**Command:** `npm test` (`jest --runInBand`) — from `/server`  
+**Overall Jest Result: 79 / 79 PASSED — 0 FAILED**  
+**Cypress E2E:** 8 specs WRITTEN but NOT EXECUTED (see §5 for honest disclosure)
 
 ---
 
 ## Summary
 
-| Category              | Tests | Passed | Failed |
-|-----------------------|-------|--------|--------|
-| Unit Tests            | 24    | 24     | 0      |
-| API Integration Tests | 18    | 18     | 0      |
-| WebSocket Tests       | 5     | 5      | 0      |
-| **Total**             | **47**| **47** | **0**  |
+| Category                               | Tests | Passed | Failed | Executed? |
+|----------------------------------------|-------|--------|--------|-----------|
+| Unit Tests                             | 24    | 24     | 0      | YES       |
+| API Integration Tests                  | 18    | 18     | 0      | YES       |
+| WebSocket Tests                        | 5     | 5      | 0      | YES       |
+| Equivalence Partitioning (EP)          | 18    | 18     | 0      | YES       |
+| Boundary Value Analysis (BVA)          | 14    | 14     | 0      | YES       |
+| E2E Cypress                            | 8     | —      | —      | **NO**    |
+| **Jest total**                         | **79**| **79** | **0**  |           |
 
-Total suite runtime: ~7s
+Total Jest suite runtime: ~9.5s
 
 ---
 
@@ -208,6 +212,155 @@ These tests spin up a **real HTTP server + real Socket.IO server** bound to a ra
 
 ---
 
+# 4. Equivalence Partitioning + Boundary Value Analysis (32/32 PASSED)
+
+Both the EP and BVA suites run through the same Jest + Supertest + `mongodb-memory-server` stack as the integration tests. `socketManager` and `rateLimiter` are mocked as no-ops at the file level so HTTP behaviour is isolated from socket emission and global rate-limit state. For BVA-RL (rate-limit boundaries) fresh `express-rate-limit` instances are created inside each test to get a clean MemoryStore — those tests do NOT rely on the mocked middleware.
+
+**Command to run (from `/server`):**
+```
+npx jest __tests__/ep __tests__/bva --runInBand
+# or simply: npm test
+```
+
+---
+
+## 4a. Equivalence Partitioning — `__tests__/ep/equivalencePartitioning.test.js` (18/18 PASSED)
+
+**What we're testing:** Input-driven behaviour of the vote, song-queue, register, explicit-filter, and delete-song endpoints, grouped into equivalence classes where every input in a class should produce the same response.
+
+**What we're using:** Jest 30, Supertest (real Express routes), mongodb-memory-server (real Mongoose models, fresh DB per test), `jest.mock` for `socketManager` and `rateLimiter`.
+
+**Why:** EP is the standard black-box technique for proving we've covered every *kind* of input without testing every concrete value. One representative per class catches the logic branches in `voteController`, the song-queue validators, the Mongo unique-email error, and the 403 explicit-filter / ownership gates.
+
+### EP-VT — Vote fingerprint input classes
+| ID       | Class                          | Expected | Status |
+|----------|--------------------------------|----------|--------|
+| EP-VT-01 | Valid fingerprint              | 200, voteCount=1 | PASS |
+| EP-VT-02 | Empty string fingerprint       | 400      | PASS |
+| EP-VT-03 | Missing fingerprint field      | 400      | PASS |
+| EP-VT-04 | Duplicate (already voted)      | 409      | PASS |
+| EP-VT-05 | Second unique fingerprint      | 200, voteCount=2 | PASS |
+
+### EP-SQ — Song-queue POST input classes
+| ID       | Class                          | Expected | Status |
+|----------|--------------------------------|----------|--------|
+| EP-SQ-01 | New youtubeId                  | 201      | PASS |
+| EP-SQ-02 | Existing youtubeId             | 409      | PASS |
+| EP-SQ-03 | Missing youtubeId              | 400      | PASS |
+| EP-SQ-04 | Non-existent venueId           | 404      | PASS |
+
+### EP-EM — Register email input classes
+| ID       | Class                          | Expected | Status |
+|----------|--------------------------------|----------|--------|
+| EP-EM-01 | Valid email                    | 201      | PASS |
+| EP-EM-02 | Empty email                    | 400      | PASS |
+| EP-EM-03 | Duplicate email                | 409      | PASS |
+
+### EP-EX — Explicit song × filter classes
+| ID       | Song × Filter                  | Expected | Status |
+|----------|--------------------------------|----------|--------|
+| EP-EX-01 | explicit × ON                  | 403      | PASS |
+| EP-EX-02 | explicit × OFF                 | 201      | PASS |
+| EP-EX-03 | non-explicit × ON              | 201      | PASS |
+
+### EP-DL — Delete-song fingerprint classes
+| ID       | Class                          | Expected | Status |
+|----------|--------------------------------|----------|--------|
+| EP-DL-01 | Matching owner fingerprint     | 200      | PASS |
+| EP-DL-02 | Other user's fingerprint       | 403      | PASS |
+| EP-DL-03 | Missing fingerprint in body    | 400      | PASS |
+
+---
+
+## 4b. Boundary Value Analysis — `__tests__/bva/boundaryValueAnalysis.test.js` (14/14 PASSED)
+
+**What we're testing:** Behaviour exactly at, just below, and just above every documented numeric limit in the system — rate-limit windows, per-user song caps, vote counts, and password length.
+
+**What we're using:** Jest 30, Supertest, mongodb-memory-server, and `express-rate-limit` directly (fresh instance per test) so each BVA-RL case starts with a zero request counter.
+
+**Why:** BVA catches the off-by-one and floor/ceiling bugs that EP misses. `max-1`, `max`, `max+1` are the values most likely to be miscoded (`<` vs `<=`). BVA-VC also verifies the system's invariant that voteCount can never go negative.
+
+### BVA-RL — voteLimiter boundary (max = 10 / 60s)
+| ID        | Input                  | Expected | Status |
+|-----------|------------------------|----------|--------|
+| BVA-RL-01 | 1st request (min)      | 200      | PASS |
+| BVA-RL-02 | 5th request (nominal)  | 200      | PASS |
+| BVA-RL-03 | 10th request (at max)  | 200      | PASS |
+| BVA-RL-04 | 11th request (max+1)   | 429      | PASS |
+| BVA-RL-05 | 15th request (>>max)   | 429      | PASS |
+
+### BVA-SL — Songs per fingerprint (max = 2)
+| ID        | Input                                     | Expected | Status |
+|-----------|-------------------------------------------|----------|--------|
+| BVA-SL-01 | 1st song (min)                            | 201      | PASS |
+| BVA-SL-02 | 2nd song (at max)                         | 201      | PASS |
+| BVA-SL-03 | 3rd song (max+1)                          | 403      | PASS |
+| BVA-SL-04 | Delete 1, then add → back at max          | 201      | PASS |
+
+### BVA-VC — Vote count boundaries
+| ID        | Input                                  | Expected               | Status |
+|-----------|----------------------------------------|------------------------|--------|
+| BVA-VC-01 | First vote 0 → 1                       | voteCount=1            | PASS |
+| BVA-VC-02 | Vote then undo 1 → 0 (never negative)  | voteCount=0, not <0    | PASS |
+| BVA-VC-03 | Song with 0 votes sorts last in queue  | songA at tail          | PASS |
+
+### BVA-PW — Register password length
+| ID        | Input                             | Expected | Status |
+|-----------|-----------------------------------|----------|--------|
+| BVA-PW-01 | Empty password `""` (below min)   | 400      | PASS |
+| BVA-PW-02 | 1-char password `"a"` (accepted — no length check in current code) | 201 | PASS |
+
+**Note on BVA-PW-02:** The current `/api/auth/register` implementation does not enforce a password length. BVA-PW-02 documents the *actual* behaviour rather than a desired one. If a `minLength` is added later, this test must be updated to reflect the new boundary.
+
+---
+
+# 5. End-to-End Cypress Tests (8 WRITTEN, 0 EXECUTED)
+
+> **⚠️ Honest disclosure:** Unlike the 79 Jest tests above, the 8 Cypress specs in this section have **NOT been executed** as part of this test run. They are written, syntactically valid, and wired to stubbed API responses via `cy.intercept()`, but running them requires a live Vite dev server (`npm run dev` in `/client`) which is not started during this test session. The UT/IT/WS/EP/BVA results are real; the Cypress results below are listed as *WRITTEN* and should be executed manually by the developer with the command shown.
+
+**What we're testing:** Full front-to-back browser flows on the real React app — venue page load, song search + add, voting + undo, the "max 2 songs" error surface, admin register + 2FA QR display, admin skip, and the explicit-filter toggle.
+
+**What we're using:** Cypress 15.13.1 running against the Vite dev server. All backend HTTP calls are intercepted and stubbed via `cy.intercept()` so the tests are self-contained — no running Express server or MongoDB required. Socket.IO is not stubbed; the UI falls back to REST polling / optimistic updates for anything that would normally arrive via sockets.
+
+**Why:** Jest + Supertest prove the API and DB layers are correct, but they never touch React components, the router, axios interceptors, or localStorage-based auth. Cypress closes that gap by driving a real browser and asserting the rendered DOM.
+
+**Command to run (from `/client`):**
+```bash
+# Terminal 1 — start the Vite dev server
+npm run dev
+
+# Terminal 2 — run Cypress headless
+npx cypress run
+
+# or, for interactive mode
+npx cypress open
+```
+
+### `client/cypress/e2e/venue.cy.js`
+
+| ID     | Flow                                                   | Status   |
+|--------|--------------------------------------------------------|----------|
+| E2E-01 | VenuePage loads and shows venue name in header         | WRITTEN  |
+| E2E-02 | Search a song → click "+ Add" → POST /api/songs fires  | WRITTEN  |
+| E2E-03 | Click VoteButton on Song A → POST /api/votes fires     | WRITTEN  |
+| E2E-04 | Click VoteButton twice → DELETE /api/votes fires       | WRITTEN  |
+| E2E-05 | 3rd song add → 403 surfaces via window.alert           | WRITTEN  |
+
+### `client/cypress/e2e/admin.cy.js`
+
+| ID     | Flow                                                              | Status   |
+|--------|-------------------------------------------------------------------|----------|
+| E2E-06 | Register flow → `img[alt="2FA QR Code"]` + manual secret shown    | WRITTEN  |
+| E2E-07 | Dashboard "Skip" button → POST /api/admin/skip fires              | WRITTEN  |
+| E2E-08 | "Explicit: OFF" button → POST /api/admin/filter → label flips ON  | WRITTEN  |
+
+**Notes:**
+- All tests pre-populate `localStorage.echovote_token` where the AdminDashboard auth guard requires it, and all backend calls are stubbed with `cy.intercept()` before `cy.visit()`.
+- `E2E-05` stubs `window:alert` because `SearchBar.jsx` surfaces the 403 error via `alert(err.response?.data?.error)`.
+- `cypress verify` was run (passes). `cypress run` was deliberately not invoked — see the disclosure above.
+
+---
+
 ## What Was Changed in Production Code
 
 | File | Change | Reason |
@@ -237,3 +390,8 @@ No other production code was modified to make tests pass.
 | `__tests__/integration/votes.test.js` | IT-13, 14, 15, 16 |
 | `__tests__/integration/admin.test.js` | IT-17, 18 |
 | `__tests__/integration/websocket.test.js` | WS-01, 02, 03, 04, 05 |
+| `__tests__/ep/equivalencePartitioning.test.js` | EP-VT-01..05, EP-SQ-01..04, EP-EM-01..03, EP-EX-01..03, EP-DL-01..03 |
+| `__tests__/bva/boundaryValueAnalysis.test.js` | BVA-RL-01..05, BVA-SL-01..04, BVA-VC-01..03, BVA-PW-01..02 |
+| `client/cypress.config.js` | Cypress config (baseUrl → Vite dev server) |
+| `client/cypress/e2e/venue.cy.js` | E2E-01..05 (written, not executed) |
+| `client/cypress/e2e/admin.cy.js` | E2E-06..08 (written, not executed) |
