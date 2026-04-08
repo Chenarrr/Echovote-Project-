@@ -702,8 +702,8 @@ The admin dashboard emits the YouTube player's current time and duration every s
 **Song limit per guest**
 Each guest can add a maximum of 2 songs to the queue (tracked by browser fingerprint via `addedBy`). Guests can remove their own songs to free up a slot. Admins can remove any song.
 
-**Voting with undo**
-Each `ActiveQueue` document stores a `voterFingerprints` array. Voting adds the fingerprint and increments the count; undoing removes it and decrements. The vote button toggles between voted/unvoted states. Fingerprints are generated client-side with `@fingerprintjs/fingerprintjs`.
+**Voting with undo (race-safe)**
+Each `ActiveQueue` document stores a `voterFingerprints` array. Voting and undoing both use a single atomic Mongo operation — `findOneAndUpdate` with a conditional filter (`voterFingerprints: { $ne: fingerprint }` for cast, `voterFingerprints: fingerprint` for undo) and a `$push`/`$pull` + `$inc` update — so concurrent voters on the same song never lose votes or end up with `voteCount` out of sync with `voterFingerprints.length`. The vote button toggles between voted/unvoted states client-side. Fingerprints are generated with `@fingerprintjs/fingerprintjs`.
 
 **Audience reactions**
 Guests can react to the currently playing song with one of three emojis: fire (love it), meh, or dislike. Reactions are sent via socket and displayed live on the admin dashboard as counts. Counts reset when the song changes. This helps the admin decide whether to skip a track.

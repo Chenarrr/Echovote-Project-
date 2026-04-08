@@ -1,6 +1,6 @@
 # EchoVote — Test Results
 
-**Run date:** 2026-04-08  
+**Run date:** 2026-04-09  
 **Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server + Vitest 2 + React Testing Library + Cypress 15  
 **Commands:**
 - Server: `npm test` from `/server` (`jest --runInBand`)
