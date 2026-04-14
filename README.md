@@ -206,11 +206,19 @@ Edit `.env` and fill in your values:
 ```
 JWT_SECRET=some_long_random_string
 YOUTUBE_API_KEY=your_api_key_here
+
+MONGO_INITDB_ROOT_USERNAME=your_mongo_username
+MONGO_INITDB_ROOT_PASSWORD=your_mongo_password
+MONGO_INITDB_DATABASE=echovote
 ```
 
-Generate a secure JWT_SECRET:
+Generate secure values:
 ```bash
-openssl rand -hex 32
+# JWT secret
+openssl rand -base64 32
+
+# MongoDB password
+openssl rand -base64 24 | tr -d '=/+' | head -c 32
 ```
 
 ### 2. Start all services
@@ -316,8 +324,10 @@ cd client && npx cypress open
 |---|---|---|
 | `JWT_SECRET` | Yes | Secret key for signing JWTs |
 | `YOUTUBE_API_KEY` | Yes | YouTube Data API v3 key |
+| `MONGO_INITDB_ROOT_USERNAME` | Yes | MongoDB root username |
+| `MONGO_INITDB_ROOT_PASSWORD` | Yes | MongoDB root password |
+| `MONGO_INITDB_DATABASE` | Yes | MongoDB database name (use `echovote`) |
 | `PORT` | No | Server port (default: `3001`) |
-| `MONGO_URI` | No | MongoDB connection string (default: `mongodb://mongo:27017/echovote`) |
 | `CLIENT_ORIGIN` | No | CORS allowed origin (default: `http://localhost:5173`) |
 | `NODE_ENV` | No | `development` or `production` |
 
@@ -336,7 +346,8 @@ Defined in `docker-compose.yml`:
 
 ### `mongo`
 - Image: `mongo:7`
-- Port: `27017`
+- Port: `127.0.0.1:27017` (bound to localhost only — not reachable from outside)
+- Auth: username + password via `MONGO_INITDB_ROOT_USERNAME` / `MONGO_INITDB_ROOT_PASSWORD`
 - Volume: `mongo_data` (persistent)
 
 ### `server`
@@ -392,7 +403,7 @@ You can manage the database directly via the MongoDB shell inside Docker.
 ### Connect to the database
 
 ```bash
-docker exec -it echovote_mongo mongosh echovote
+docker exec -it echovote_mongo mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin echovote
 ```
 
 ### View data
@@ -485,7 +496,7 @@ db.admins.aggregate([
 ])
 ```
 
-> **Tip:** You can also use [MongoDB Compass](https://www.mongodb.com/products/compass) (GUI) — connect to `mongodb://localhost:27017` and browse/edit the `echovote` database visually.
+> **Tip:** You can also use [MongoDB Compass](https://www.mongodb.com/products/compass) (GUI) — connect to `mongodb://<MONGO_INITDB_ROOT_USERNAME>:<MONGO_INITDB_ROOT_PASSWORD>@localhost:27017/?authSource=admin` and browse/edit the `echovote` database visually.
 
 ---
 
