@@ -5,7 +5,11 @@ services:
     image: mongo:7
     container_name: echovote_mongo
     ports:
-      - '27017:27017'
+      - '127.0.0.1:27017:27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
     volumes:
       - mongo_data:/data/db
     networks:
@@ -19,7 +23,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
-      - MONGO_URI=mongodb://mongo:27017/echovote
+      - MONGO_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/echovote?authSource=admin
       - JWT_SECRET=${JWT_SECRET}
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
       - CLIENT_ORIGIN=${CLIENT_ORIGIN:-http://localhost:5173}
