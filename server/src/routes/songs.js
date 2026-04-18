@@ -57,12 +57,15 @@ router.post('/:venueId', async (req, res) => {
       }
     }
 
-    const existing = await ActiveQueue.findOne({ venueId }).populate({
-      path: 'songId',
-      match: { youtubeId },
-    });
-    if (existing && existing.songId) {
-      return res.status(409).json({ error: 'Song already in queue' });
+    const matchingSongs = await Song.find({ venueId, youtubeId }, '_id');
+    if (matchingSongs.length > 0) {
+      const existingQueueEntry = await ActiveQueue.findOne({
+        venueId,
+        songId: { $in: matchingSongs.map((song) => song._id) },
+      });
+      if (existingQueueEntry) {
+        return res.status(409).json({ error: 'Song already in queue' });
+      }
     }
 
     const song = await Song.create({ youtubeId, title, thumbnail, artist, addedBy, isExplicit, venueId });

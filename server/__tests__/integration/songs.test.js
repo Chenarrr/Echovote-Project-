@@ -94,6 +94,26 @@ test('IT-08: POST /api/songs/:venueId with duplicate youtubeId returns 409', asy
   expect(res.body.error).toBe('Song already in queue');
 });
 
+// IT-08B
+test('IT-08B: POST /api/songs/:venueId rejects a duplicate youtubeId even when it is not the first queue entry', async () => {
+  const venue = await Venue.create({ name: 'V8B', qrCodeSecret: `s-${Date.now()}` });
+
+  await request(app)
+    .post(`/api/songs/${venue._id}`)
+    .send({ youtubeId: 'yt-first', title: 'First Song', addedBy: 'fp-08b-1' });
+
+  await request(app)
+    .post(`/api/songs/${venue._id}`)
+    .send({ youtubeId: 'yt-second', title: 'Second Song', addedBy: 'fp-08b-2' });
+
+  const res = await request(app)
+    .post(`/api/songs/${venue._id}`)
+    .send({ youtubeId: 'yt-second', title: 'Second Song Duplicate', addedBy: 'fp-08b-3' });
+
+  expect(res.status).toBe(409);
+  expect(res.body.error).toBe('Song already in queue');
+});
+
 // IT-09
 test('IT-09: POST /api/songs/:venueId explicit song with filter ON returns 403', async () => {
   const venue = await Venue.create({
