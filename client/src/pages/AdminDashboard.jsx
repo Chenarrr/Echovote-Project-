@@ -413,17 +413,17 @@ const AdminDashboard = () => {
                     return (
                       <div
                         key={entry._id}
-                        className={`flex items-center gap-3 rounded-[22px] p-3.5 transition-all hover:scale-[1.005] ${isTop ? 'glass rank-gold panel-shell pl-4' : 'glass-subtle hover:bg-white/[0.06]'}`}
+                        className={`flex items-center gap-3 rounded-[22px] p-3.5 min-h-[76px] transition-all hover:scale-[1.005] ${isTop ? 'glass rank-gold pl-4' : 'glass-subtle hover:bg-white/[0.06]'}`}
                       >
-                        <div className="w-6 text-center flex-shrink-0">
-                          {isTop ? <span className="text-base leading-none" title="Top voted">👑</span> : <span className="text-white/20 text-xs font-bold tabular-nums">{i + 1}</span>}
+                        <div className="w-6 text-center flex-shrink-0 flex items-center justify-center">
+                          {isTop ? <span className="text-lg leading-none" title="Top voted">👑</span> : <span className="text-white/20 text-xs font-bold tabular-nums">{i + 1}</span>}
                         </div>
-                        <img src={song.thumbnail} alt={song.title} className={`w-12 h-12 rounded-2xl object-cover flex-shrink-0 ${isTop ? 'ring-2 ring-amber-400/40' : 'ring-1 ring-white/10'}`} />
+                        <img src={song.thumbnail} alt={song.title} className={`w-12 h-12 rounded-2xl object-cover flex-shrink-0 ${isTop ? 'ring-2 ring-amber-400/45' : 'ring-1 ring-white/10'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate">{song.title}</p>
                           <p className="text-xs text-white/50 truncate mt-0.5">{song.artist}</p>
                         </div>
-                        <span className={`stat-pill !px-3 !py-1.5 text-xs font-bold tabular-nums ${isTop ? 'text-amber-300 border-amber-400/30' : 'text-cyan-300'}`}>{entry.voteCount}</span>
+                        <span className={`stat-pill !px-3 !py-1.5 text-xs font-bold tabular-nums ${isTop ? 'text-amber-300 !border-amber-400/35' : 'text-cyan-300'}`}>{entry.voteCount}</span>
                         <button
                           onClick={() => handleDeleteQueueSong(song._id)}
                           className="glass-subtle hover:bg-red-500/12 text-white/55 hover:text-red-300 transition-colors px-3 py-2 rounded-xl text-xs font-semibold flex-shrink-0"

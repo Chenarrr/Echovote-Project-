@@ -8,14 +8,14 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
 
   return (
     <div
-      className={`flex items-center gap-2 sm:gap-3 rounded-[24px] p-3 sm:p-4 transition-all hover:scale-[1.01] float-in ${
-        isTop ? 'glass rank-gold panel-shell' : 'glass panel-shell hover:bg-white/[0.08]'
+      className={`flex items-center gap-2 sm:gap-3 rounded-[24px] p-3 sm:p-4 min-h-[76px] sm:min-h-[84px] transition-all hover:scale-[1.01] float-in ${
+        isTop ? 'glass rank-gold pl-4 sm:pl-5' : 'glass panel-shell hover:bg-white/[0.08]'
       }`}
       style={{ animationDelay: `${(rank - 1) * 60}ms`, opacity: 0 }}
     >
-      <div className="flex-shrink-0 w-5 sm:w-7 text-center">
+      <div className="flex-shrink-0 w-5 sm:w-7 flex items-center justify-center">
         {isTop ? (
-          <span className="text-base sm:text-lg" title="Top voted">👑</span>
+          <span className="text-lg sm:text-xl leading-none" title="Top voted">👑</span>
         ) : (
           <span className="text-white/35 text-xs font-bold tabular-nums">{rank}</span>
         )}
