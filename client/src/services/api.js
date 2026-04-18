@@ -21,8 +21,8 @@ export const adminLogin = (email, password, totpCode) =>
   api.post('/api/auth/login', { email, password, totpCode });
 export const adminRegister = (email, password, venueName) =>
   api.post('/api/auth/register', { email, password, venueName });
-export const verify2FASetup = (email, token) =>
-  api.post('/api/auth/verify-2fa-setup', { email, token });
+export const verify2FASetup = (setupToken, token) =>
+  api.post('/api/auth/verify-2fa-setup', { setupToken, token });
 export const getVenueInfo = (venueId) => api.get(`/api/venue/${venueId}`);
 export const getAdminVenue = () => api.get('/api/admin/venue');
 export const uploadVenueImage = (formData) =>

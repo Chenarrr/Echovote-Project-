@@ -102,8 +102,9 @@ const registerAdmin = async (email, password, venueName) => {
     .post('/api/auth/register')
     .send({ email, password, venueName });
   const secret = reg.body.secret;
+  const setupToken = reg.body.setupToken;
   const code = speakeasy.totp({ secret, encoding: 'base32' });
-  await request(app).post('/api/auth/verify-2fa-setup').send({ email, token: code });
+  await request(app).post('/api/auth/verify-2fa-setup').send({ setupToken, token: code });
   return { secret };
 };
 

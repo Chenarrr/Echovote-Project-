@@ -23,7 +23,7 @@ const AdminLogin = () => {
           setStep('setup-2fa');
         }
       } else if (mode === 'register' && step === 'setup-2fa') {
-        const { data } = await verify2FASetup(form.email, form.totpCode);
+        const { data } = await verify2FASetup(setup2FA?.setupToken, form.totpCode);
         localStorage.setItem('echovote_token', data.token);
         localStorage.setItem('echovote_venueId', data.venueId);
         navigate('/admin/dashboard');

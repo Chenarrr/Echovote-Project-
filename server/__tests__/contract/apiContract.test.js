@@ -45,11 +45,11 @@ const provisionAdmin = async (venueName = 'Contract Venue') => {
   const reg = await request(app)
     .post('/api/auth/register')
     .send({ email: EMAIL, password: PASS, venueName });
-  const { secret, venueId } = reg.body;
+  const { secret, venueId, setupToken } = reg.body;
   const setupCode = speakeasy.totp({ secret, encoding: 'base32' });
   const setup = await request(app)
     .post('/api/auth/verify-2fa-setup')
-    .send({ email: EMAIL, token: setupCode });
+    .send({ setupToken, token: setupCode });
   return { token: setup.body.token, venueId, secret };
 };
 
@@ -64,6 +64,7 @@ test('API-01: POST /api/auth/register valid -> 201 with qrCode+secret', async ()
   expect(res.body).toMatchObject({ setupRequired: true });
   expect(res.body.qrCode).toMatch(/^data:image\/png;base64,/);
   expect(typeof res.body.secret).toBe('string');
+  expect(typeof res.body.setupToken).toBe('string');
 });
 
 // API-02

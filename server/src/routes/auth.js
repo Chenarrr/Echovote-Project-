@@ -7,10 +7,15 @@ const Admin = require('../models/Admin');
 const Venue = require('../models/Venue');
 const PlaybackState = require('../models/PlaybackState');
 const { JWT_SECRET } = require('../config/env');
-const authMiddleware = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
+
+const createAdminToken = (admin) =>
+  jwt.sign({ adminId: admin._id, venueId: admin.venueId }, JWT_SECRET, { expiresIn: '7d' });
+
+const createSetupToken = (admin) =>
+  jwt.sign({ adminId: admin._id, purpose: '2fa_setup' }, JWT_SECRET, { expiresIn: '10m' });
 
 router.post('/register', authLimiter, async (req, res) => {
   try {
@@ -44,11 +49,13 @@ router.post('/register', authLimiter, async (req, res) => {
     await PlaybackState.create({ venueId: venue._id, isPlaying: false });
 
     const qrDataUrl = await QRCode.toDataURL(secret.otpauth_url);
+    const setupToken = createSetupToken(admin);
 
     res.status(201).json({
       setupRequired: true,
       qrCode: qrDataUrl,
       secret: secret.base32,
+      setupToken,
       email: admin.email,
       venueId: venue._id,
       venueName: venue.name,
@@ -58,16 +65,31 @@ router.post('/register', authLimiter, async (req, res) => {
   }
 });
 
-router.post('/verify-2fa-setup', async (req, res) => {
+router.post('/verify-2fa-setup', authLimiter, async (req, res) => {
   try {
-    const { email, token: totpToken } = req.body;
-    if (!email || !totpToken) {
-      return res.status(400).json({ error: 'email and token are required' });
+    const { setupToken, token: totpToken } = req.body;
+    if (!setupToken || !totpToken) {
+      return res.status(400).json({ error: 'setupToken and token are required' });
     }
 
-    const admin = await Admin.findOne({ email });
+    let setupPayload;
+    try {
+      setupPayload = jwt.verify(setupToken, JWT_SECRET);
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired setup token' });
+    }
+
+    if (setupPayload.purpose !== '2fa_setup' || !setupPayload.adminId) {
+      return res.status(401).json({ error: 'Invalid or expired setup token' });
+    }
+
+    const admin = await Admin.findById(setupPayload.adminId);
     if (!admin || !admin.twoFactorSecret) {
       return res.status(400).json({ error: 'No 2FA setup found' });
+    }
+
+    if (admin.twoFactorEnabled) {
+      return res.status(409).json({ error: '2FA setup has already been completed' });
     }
 
     const verified = speakeasy.totp.verify({
@@ -84,7 +106,7 @@ router.post('/verify-2fa-setup', async (req, res) => {
     admin.twoFactorEnabled = true;
     await admin.save();
 
-    const jwtToken = jwt.sign({ adminId: admin._id, venueId: admin.venueId }, JWT_SECRET, { expiresIn: '7d' });
+    const jwtToken = createAdminToken(admin);
 
     res.json({ token: jwtToken, venueId: admin.venueId });
   } catch (err) {
@@ -120,7 +142,7 @@ router.post('/login', authLimiter, async (req, res) => {
       }
     }
 
-    const token = jwt.sign({ adminId: admin._id, venueId: admin.venueId }, JWT_SECRET, { expiresIn: '7d' });
+    const token = createAdminToken(admin);
 
     res.json({ token, venueId: admin.venueId });
   } catch (err) {
