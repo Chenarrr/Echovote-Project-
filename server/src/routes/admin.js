@@ -204,7 +204,15 @@ router.get('/venue', async (req, res) => {
     const { venueId } = req.admin;
     const venue = await Venue.findById(venueId);
     if (!venue) return res.status(404).json({ error: 'Venue not found' });
-    res.json(venue);
+    const playback = await PlaybackState.findOne({ venueId }).populate('currentSongId');
+
+    res.json({
+      ...venue.toObject(),
+      playbackState: {
+        isPlaying: playback?.isPlaying || false,
+        currentSong: playback?.currentSongId || null,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

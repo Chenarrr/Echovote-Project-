@@ -2,7 +2,7 @@
 
 A real-time, QR-code-based song voting system for public venues. Guests scan a QR code, search YouTube for songs, and vote — the crowd decides what plays next.
 
-Built with an **Apple Liquid Glass** UI — translucent glass panels floating over animated ambient gradients with a music-first personality. Inspired by iOS 26 and visionOS, designed for the crowd.
+Built with a **glass-inspired UI** — translucent panels, ambient gradients, and a music-first layout designed to stay readable on both shared screens and phones.
 
 ---
 
@@ -58,7 +58,7 @@ EchoVote lets venues hand over the playlist to their crowd. The admin registers 
 
 ## Design
 
-EchoVote uses an **Apple Liquid Glass** design language with a music-first personality — every detail is built to feel alive, fun, and made for the crowd.
+EchoVote uses a **glass-inspired** design language with a music-first personality — every detail is built to feel alive, fun, and made for the crowd.
 
 ### Glass & Ambient
 
@@ -69,15 +69,11 @@ EchoVote uses an **Apple Liquid Glass** design language with a music-first perso
 
 ### Personality & Details
 
-- **Crown for #1** — the top-voted song gets a ���� with a gold-highlighted glass card
-- **Vote pop animation** — satisfying scale bounce when you upvote
-- **Gradient progress bar** — the NowPlaying bar shows a cyan → purple → pink gradient with glow
-- **Album art glow** — the now-playing thumbnail casts a blurred light behind it
-- **Multi-color equalizer** — cyan and purple animated bars next to "Playing"
-- **Staggered entrance** — song cards float in one by one
-- **Conversational copy** — "What do you wanna hear?", "The stage is empty", "Crowd vibes"
-- **Pulsing live indicator** — animated ring on the LIVE badge
-- **Micro-interactions** — buttons lift on hover, cards scale subtly, inputs glow on focus
+- **Crown for #1** — the top-voted song gets a crown and highlighted card
+- **Gradient progress bar** — the NowPlaying bar shows live playback progress
+- **Pulsing live indicator** — the venue and guest pages surface live status clearly
+- **Compact control surfaces** — the admin dashboard keeps video, QR, queue, and playback controls visible without long explanatory copy
+- **Phone-first search flow** — guests can search and add songs quickly without extra steps
 
 The design is consistent across all three pages (VenuePage, AdminLogin, AdminDashboard) for a unified premium experience.
 
@@ -103,7 +99,7 @@ The three Docker services (client, server, mongo) communicate over an internal b
 | Layer | Technology |
 |---|---|
 | Frontend | React 18, Vite, Tailwind CSS, React Router v6 |
-| Design | Apple Liquid Glass (pure CSS — backdrop-filter, glass utilities) |
+| Design | Glass-inspired UI (pure CSS — backdrop-filter, glass utilities) |
 | Realtime | Socket.io (client + server) |
 | Backend | Node.js, Express |
 | Database | MongoDB 7 via Mongoose ODM |
@@ -181,7 +177,7 @@ echovote/
         │   ├── socketManager.js     # Global io singleton + emitToVenue helper
         │   └── voteController.js    # Fingerprint dedup + vote broadcast
         └── socket/
-            └── handlers.js          # join_venue + cast_vote socket events
+            └── handlers.js          # join_venue + reactions + authenticated playback progress
 ```
 
 ---
@@ -322,7 +318,7 @@ cd client && npx cypress open
 
 | Variable | Required | Description |
 |---|---|---|
-| `JWT_SECRET` | Yes | Secret key for signing JWTs |
+| `JWT_SECRET` | Yes | Secret key for signing JWTs. Required outside test runs; the server refuses to start without it. |
 | `YOUTUBE_API_KEY` | Yes | YouTube Data API v3 key |
 | `MONGO_INITDB_ROOT_USERNAME` | Yes | MongoDB root username |
 | `MONGO_INITDB_ROOT_PASSWORD` | Yes | MongoDB root password |
@@ -370,9 +366,10 @@ EchoVote uses TOTP (Time-based One-Time Password) for admin security.
 
 **Setup flow (on registration):**
 1. Server generates a TOTP secret using `speakeasy`
-2. Client displays a QR code for the authenticator app
-3. Admin scans the QR and enters the 6-digit code to verify
-4. Once verified, 2FA is permanently enabled for that account
+2. Server returns the QR code, manual entry secret, and a short-lived `setupToken`
+3. Client displays the QR code for the authenticator app
+4. Admin scans the QR and enters the 6-digit code together with the `setupToken`
+5. Once verified, 2FA is permanently enabled for that account and the JWT is issued
 
 **Login flow:**
 1. Admin enters email + password
@@ -387,12 +384,14 @@ Supported apps: Google Authenticator, Authy, 1Password, Microsoft Authenticator,
 
 ## Venue Image
 
-Admins can upload a venue photo (JPG/PNG, max 5MB) from the dashboard.
+Admins can upload a venue photo (JPG/PNG/GIF/WebP, max 5MB) from the dashboard.
 
 - Stored on disk in `server/uploads/`
 - Served statically at `/uploads/<filename>`
 - Displayed in the dashboard header and on the guest voting page
 - Helps guests confirm they're voting for the right venue
+- Validated by file signature before saving
+- Saved with a server-generated filename instead of the original upload name
 
 ---
 
@@ -569,15 +568,15 @@ db.admins.aggregate([
 
 | Method | Endpoint | Body | Description |
 |---|---|---|---|
-| POST | `/api/auth/register` | `{ email, password, venueName }` | Create admin + venue, returns 2FA setup QR |
-| POST | `/api/auth/verify-2fa-setup` | `{ email, token }` | Verify TOTP code and enable 2FA, returns JWT |
+| POST | `/api/auth/register` | `{ email, password, venueName }` | Create admin + venue, returns 2FA setup QR, secret, and `setupToken` |
+| POST | `/api/auth/verify-2fa-setup` | `{ setupToken, token }` | Verify TOTP code and enable 2FA, returns JWT |
 | POST | `/api/auth/login` | `{ email, password, totpCode? }` | Login; returns `{ requires2FA: true }` if 2FA enabled and no code provided |
 
 ### Songs
 
 | Method | Endpoint | Params / Body | Description |
 |---|---|---|---|
-| GET | `/api/songs/search` | `?q=<query>` | Search YouTube Data API v3 |
+| GET | `/api/songs/search` | `?q=<query>` | Search YouTube Data API v3 (rate-limited to 20/min per IP) |
 | GET | `/api/songs/:venueId` | — | Get active queue sorted by votes desc |
 | POST | `/api/songs/:venueId` | `{ youtubeId, title, thumbnail, artist, addedBy, isExplicit? }` | Add song to queue (blocked if explicit filter ON; max 2 per fingerprint) |
 | DELETE | `/api/songs/:venueId/:songId` | `{ fingerprint }` | Guest removes their own song (must match `addedBy`) |
@@ -606,8 +605,8 @@ Returns `409` if fingerprint already voted for that song.
 | POST | `/api/admin/filter` | — | Toggle `explicitFilter` on venue settings |
 | POST | `/api/admin/play-now` | `{ youtubeId, title, thumbnail, artist }` | Play a song immediately, bypassing the queue |
 | DELETE | `/api/admin/queue/:songId` | — | Remove any song from the queue |
-| POST | `/api/admin/venue-image` | `multipart/form-data` with `image` field | Upload venue photo (JPG/PNG, max 5MB) |
-| GET | `/api/admin/venue` | — | Get full venue details for authenticated admin |
+| POST | `/api/admin/venue-image` | `multipart/form-data` with `image` field | Upload venue photo (JPG/PNG/GIF/WebP, max 5MB, validated by file signature) |
+| GET | `/api/admin/venue` | — | Get full venue details plus current `playbackState` for the authenticated admin |
 | DELETE | `/api/admin/venue` | — | Delete venue, admin account, all songs, and queue (irreversible) |
 
 ### QR
@@ -633,8 +632,8 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 | Event | Payload | Description |
 |---|---|---|
 | `join_venue` | `{ venueId }` | Join the venue's Socket.io room |
-| `cast_vote` | `{ songId, fingerprint, venueId }` | Vote via socket (alternative to REST) |
-| `progress_update` | `{ venueId, currentTime, duration }` | Sent by admin dashboard every second with current playback position |
+| `cast_vote` | `{ songId, fingerprint, venueId }` | Disabled intentionally; server replies with `vote_error` and voting must go through the HTTP API |
+| `progress_update` | `{ venueId, currentTime, duration, token }` | Sent by the admin dashboard every second with current playback position and admin JWT |
 | `song_reaction` | `{ venueId, reaction, fingerprint }` | Guest reacts to the current song (fire, meh, dislike) |
 
 ### Server → All clients in venue room
@@ -648,6 +647,7 @@ All events are scoped to a venue room (`venue:<venueId>`). Clients join by emitt
 | `playback_progress` | `{ currentTime, duration }` | Current playback position (forwarded from admin to all guests every second) |
 | `reaction_update` | `{ reaction, fingerprint }` | Broadcasted to venue room when a guest reacts to the current song |
 | `vote_error` | `{ error }` | Emitted back to voter socket on failure |
+| `progress_error` | `{ error }` | Emitted back to the sender if a progress update is missing a valid admin token |
 
 ---
 
@@ -663,14 +663,14 @@ Three-step flow: credentials → 2FA setup (on register) or 2FA verification (on
 
 **`/admin/dashboard` — AdminDashboard**
 Admin control panel with:
-- Venue photo upload section
-- YouTube IFrame Player (auto-plays, triggers skip on song end)
+- TV-friendly top bar and compact venue controls
+- YouTube IFrame Player with persisted playback state and auto-skip on song end
 - Live queue with real-time vote counts
-- QR code display
+- QR code display for the room
 - Controls for skip, pause/resume, explicit filter (ON/OFF)
-- Admin song search with "Play now" (instant playback) and "Queue" (add to queue) buttons
+- Admin song search with "Play" and "Queue" actions
 - Delete button on each queue entry to remove any song
-- Danger Zone: delete venue button (asks for confirmation, wipes venue + admin + all data, then redirects to login)
+- Venue delete action with confirmation
 
 ### Components
 
@@ -678,10 +678,10 @@ Admin control panel with:
 |---|---|
 | `SongCard` | Displays rank, thumbnail, title, artist, vote button, and delete button (for own songs) |
 | `VoteButton` | Upvote toggle; click to vote, click again to undo |
-| `SearchBar` | YouTube search with search icon; shows results inline with Add button |
+| `SearchBar` | YouTube search with compact inline results and Add button |
 | `Leaderboard` | Ranked queue list with song count |
-| `NowPlaying` | Fixed bottom bar with progress bar, elapsed/total time, and animated equalizer bars |
-| `QRDisplay` | QR code with venue link |
+| `NowPlaying` | Fixed bottom bar with progress bar, elapsed/total time, and reactions |
+| `QRDisplay` | Compact QR code panel for guest access |
 
 ### Hooks
 
@@ -696,19 +696,19 @@ Fetches the initial queue via REST, then keeps it in sync via `queue_updated`, `
 ## Key Implementation Details
 
 **Two-factor authentication**
-Admin accounts are protected with TOTP 2FA. The secret is generated during registration using `speakeasy`, and the admin verifies it with their authenticator app before the account is fully activated. Login requires both password and TOTP code.
+Admin accounts are protected with TOTP 2FA. The secret is generated during registration using `speakeasy`, and the admin verifies it with their authenticator app before the account is fully activated. Registration returns a short-lived `setupToken`, and no admin JWT is issued until that setup token and TOTP code are verified together. Login requires both password and TOTP code.
 
 **Venue branding**
-Each venue can upload a photo that is displayed on both the admin dashboard and the guest voting page, making the experience feel tailored to the specific location. Images are currently stored on disk in `server/uploads/` with only the path saved in the database — this works fine locally via Docker volumes, but before deploying to production (Render, Fly.io, etc.) you should migrate to cloud storage (e.g. Cloudinary) since hosted filesystems are ephemeral and reset on every deploy.
+Each venue can upload a photo that is displayed on both the admin dashboard and the guest voting page, making the experience feel tailored to the specific location. Uploads are validated against the real file bytes before saving, and files are stored on disk in `server/uploads/` with a server-generated filename. This works fine locally via Docker volumes, but before deploying to production (Render, Fly.io, etc.) you should migrate to cloud storage (e.g. Cloudinary) since hosted filesystems are ephemeral and reset on every deploy.
 
 **Explicit content filter**
 When enabled, the server blocks explicit songs from being added to the queue. YouTube search results include an `isExplicit` flag derived from YouTube's `contentRating.ytRating` (age-restricted content). The admin toggles the filter from the dashboard — the button shows ON/OFF state. Explicit songs are marked with an `E` badge in search results.
 
 **Admin direct playback**
-Admins can search for songs and play them immediately via "Play now", bypassing the queue. The queue remains untouched — queued songs play in order after the admin's pick finishes or is skipped.
+Admins can search for songs and play them immediately via the "Play" action, bypassing the queue. The queue remains untouched — queued songs play in order after the admin's pick finishes or is skipped.
 
 **Live playback progress**
-The admin dashboard emits the YouTube player's current time and duration every second via socket (`progress_update`). The server forwards this to all guests in the venue room (`playback_progress`). The guest NowPlaying bar displays a progress bar and elapsed/total time.
+The admin dashboard emits the YouTube player's current time and duration every second via socket (`progress_update`). Each progress update includes the admin JWT, and the server verifies that token before forwarding `playback_progress` to guests in the same venue room. The guest NowPlaying bar displays a progress bar and elapsed/total time.
 
 **Song limit per guest**
 Each guest can add a maximum of 2 songs to the queue (tracked by browser fingerprint via `addedBy`). Guests can remove their own songs to free up a slot. Admins can remove any song.
@@ -722,6 +722,9 @@ Guests can react to the currently playing song with one of three emojis: fire (l
 **Real-time updates**
 All clients join a Socket.io room keyed by venue ID. Every vote, song add, or skip broadcasts to the entire room so every open browser tab updates instantly.
 
+**Socket voting is disabled**
+Votes are accepted only through the HTTP vote API so they always pass through the same validation and rate-limiting path. Any client that tries to vote over Socket.io receives a `vote_error` response instead.
+
 **Auto-advance playback**
 The YouTube IFrame Player's `onStateChange` fires when a video ends (`YT.PlayerState.ENDED`). The admin dashboard calls `POST /api/admin/skip` automatically, which removes the current song from the queue, picks the next highest-voted, and broadcasts `now_playing` to all clients.
 
@@ -731,7 +734,10 @@ The YouTube IFrame Player's `onStateChange` fires when a video ends (`YT.PlayerS
 - Server middleware in `auth.js` verifies and decodes it, attaching `req.admin` with `{ adminId, venueId }`
 
 **Rate limiting**
-`express-rate-limit` on `POST /api/votes/:songId` — max 10 requests per minute per IP.
+`express-rate-limit` is applied to:
+- `POST /api/votes/:songId` — max 10 requests per minute per IP
+- Auth endpoints — max 20 attempts per 15 minutes per IP
+- `GET /api/songs/search` — max 20 requests per minute per IP
 
 ---
 

@@ -18,6 +18,7 @@ const { connect, close, clear } = require('../helpers/db');
 const { createApp } = require('../helpers/app');
 const Venue = require('../../src/models/Venue');
 const PlaybackState = require('../../src/models/PlaybackState');
+const Song = require('../../src/models/Song');
 
 const JWT_SECRET = 'fallback_dev_secret';
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
@@ -99,4 +100,33 @@ test('IT-20: POST /api/admin/venue-image rejects fake image content even with im
 
   const updatedVenue = await Venue.findById(venue._id);
   expect(updatedVenue.image).toBeNull();
+});
+
+// IT-21
+test('IT-21: GET /api/admin/venue returns saved playback state for the dashboard', async () => {
+  const venue = await Venue.create({ name: 'AdminPlaybackV', qrCodeSecret: `s-${Date.now()}` });
+  const song = await Song.create({
+    venueId: venue._id,
+    youtubeId: 'abc123xyz89',
+    title: 'Current Track',
+    thumbnail: 'https://example.com/thumb.jpg',
+    artist: 'EchoVote',
+  });
+  await PlaybackState.create({ venueId: venue._id, isPlaying: true, currentSongId: song._id });
+
+  const token = createAdminToken(venue._id);
+
+  const res = await request(app)
+    .get('/api/admin/venue')
+    .set('Authorization', `Bearer ${token}`);
+
+  expect(res.status).toBe(200);
+  expect(res.body.name).toBe('AdminPlaybackV');
+  expect(res.body.playbackState).toMatchObject({
+    isPlaying: true,
+    currentSong: expect.objectContaining({
+      youtubeId: 'abc123xyz89',
+      title: 'Current Track',
+    }),
+  });
 });

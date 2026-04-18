@@ -23,9 +23,11 @@ const AdminDashboard = () => {
   const [adminAdding, setAdminAdding] = useState(null);
   const [reactions, setReactions] = useState({ fire: 0, meh: 0, dislike: 0 });
   const [toast, setToast] = useState(null);
+  const [playerReady, setPlayerReady] = useState(false);
   const playerRef = useRef(null);
   const playerInstanceRef = useRef(null);
   const fileInputRef = useRef(null);
+  const loadedSongRef = useRef(null);
 
   const showToast = useCallback((message, variant = 'error') => {
     setToast({ id: `${Date.now()}-${Math.random()}`, message, variant });
@@ -47,8 +49,8 @@ const AdminDashboard = () => {
       }
     },
     now_playing: ({ song }) => {
-      if (song && playerInstanceRef.current) {
-        playerInstanceRef.current.loadVideoById(song.youtubeId);
+      if (!song) {
+        loadedSongRef.current = null;
       }
       setReactions({ fire: 0, meh: 0, dislike: 0 });
     },
@@ -63,6 +65,7 @@ const AdminDashboard = () => {
     getAdminVenue().then(({ data }) => {
       setVenue(data);
       setExplicitFilter(data.settings?.explicitFilter || false);
+      setIsPlaying(Boolean(data.playbackState?.isPlaying));
     }).catch(() => {});
 
     const tag = document.createElement('script');
@@ -76,6 +79,9 @@ const AdminDashboard = () => {
         videoId: nowPlaying?.youtubeId || '',
         playerVars: { autoplay: 1, controls: 1 },
         events: {
+          onReady: () => {
+            setPlayerReady(true);
+          },
           onStateChange: (e) => {
             if (e.data === window.YT.PlayerState.ENDED) {
               adminSkip().catch(console.error);
@@ -86,11 +92,24 @@ const AdminDashboard = () => {
     };
   }, []);
 
+  const activeSong = nowPlaying || venue?.playbackState?.currentSong || null;
+
   useEffect(() => {
-    if (nowPlaying && playerInstanceRef.current) {
-      playerInstanceRef.current.loadVideoById(nowPlaying.youtubeId);
+    if (!playerReady || !playerInstanceRef.current) return;
+    if (!activeSong?.youtubeId) {
+      loadedSongRef.current = null;
+      return;
     }
-  }, [nowPlaying]);
+
+    if (loadedSongRef.current === activeSong.youtubeId) return;
+
+    loadedSongRef.current = activeSong.youtubeId;
+    if (isPlaying) {
+      playerInstanceRef.current.loadVideoById(activeSong.youtubeId);
+    } else {
+      playerInstanceRef.current.cueVideoById(activeSong.youtubeId);
+    }
+  }, [activeSong, isPlaying, playerReady]);
 
   useEffect(() => {
     const interval = setInterval(() => {
