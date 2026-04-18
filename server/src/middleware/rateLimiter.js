@@ -16,4 +16,12 @@ const authLimiter = rateLimit({
   message: { error: 'Too many login attempts, please try again later' },
 });
 
-module.exports = { voteLimiter, authLimiter };
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many search requests, please try again in a moment' },
+});
+
+module.exports = { voteLimiter, authLimiter, searchLimiter };

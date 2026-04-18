@@ -29,6 +29,19 @@ const createAuthLimiterApp = () => {
   return app;
 };
 
+const createSearchLimiterApp = () => {
+  const limiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many search requests, please try again in a moment' },
+  });
+  const app = express();
+  app.get('/test', limiter, (req, res) => res.status(200).json({ ok: true }));
+  return app;
+};
+
 describe('voteLimiter', () => {
   let app;
 
@@ -76,5 +89,31 @@ describe('authLimiter', () => {
     }
     const res = await request(app).post('/test');
     expect(res.status).toBe(429);
+  });
+});
+
+describe('searchLimiter', () => {
+  let app;
+
+  beforeEach(() => {
+    app = createSearchLimiterApp();
+  });
+
+  // UT-24
+  test('UT-24: allows first 20 search requests within 1 min', async () => {
+    for (let i = 0; i < 20; i++) {
+      const res = await request(app).get('/test');
+      expect(res.status).toBe(200);
+    }
+  });
+
+  // UT-25
+  test('UT-25: blocks 21st search request with 429', async () => {
+    for (let i = 0; i < 20; i++) {
+      await request(app).get('/test');
+    }
+    const res = await request(app).get('/test');
+    expect(res.status).toBe(429);
+    expect(res.body.error).toBe('Too many search requests, please try again in a moment');
   });
 });

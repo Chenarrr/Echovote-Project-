@@ -4,10 +4,11 @@ const ActiveQueue = require('../models/ActiveQueue');
 const Venue = require('../models/Venue');
 const { searchYouTube } = require('../services/youtubeService');
 const { emitToVenue } = require('../services/socketManager');
+const { searchLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-router.get('/search', async (req, res) => {
+router.get('/search', searchLimiter, async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.status(400).json({ error: 'Query param q is required' });

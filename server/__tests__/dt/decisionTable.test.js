@@ -22,6 +22,7 @@ jest.mock('../../src/middleware/rateLimiter', () => {
       return res.status(429).json({ error: 'Too many requests' });
     },
     authLimiter: (req, res, next) => next(),
+    searchLimiter: (req, res, next) => next(),
   };
 });
 

@@ -7,6 +7,7 @@ jest.mock('../../src/services/socketManager', () => ({
 jest.mock('../../src/middleware/rateLimiter', () => ({
   voteLimiter: (req, res, next) => next(),
   authLimiter: (req, res, next) => next(),
+  searchLimiter: (req, res, next) => next(),
 }));
 
 const request = require('supertest');
