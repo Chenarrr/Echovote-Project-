@@ -94,7 +94,7 @@ const VenuePage = () => {
   const venueImageUrl = venue?.image ? `${API_URL}${venue.image}` : null;
 
   return (
-    <div className="min-h-screen relative pb-24">
+    <div className="min-h-screen relative pb-36 sm:pb-24">
       <div className="ambient-bg">
         <div className="ambient-blob ambient-blob-1" />
         <div className="ambient-blob ambient-blob-2" />

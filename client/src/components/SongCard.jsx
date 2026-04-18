@@ -8,14 +8,14 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-[24px] p-4 transition-all hover:scale-[1.01] float-in ${
+      className={`flex items-center gap-2 sm:gap-3 rounded-[24px] p-3 sm:p-4 transition-all hover:scale-[1.01] float-in ${
         isTop ? 'glass rank-gold panel-shell' : 'glass panel-shell hover:bg-white/[0.08]'
       }`}
       style={{ animationDelay: `${(rank - 1) * 60}ms`, opacity: 0 }}
     >
-      <div className="flex-shrink-0 w-7 text-center">
+      <div className="flex-shrink-0 w-5 sm:w-7 text-center">
         {isTop ? (
-          <span className="text-lg" title="Top voted">👑</span>
+          <span className="text-base sm:text-lg" title="Top voted">👑</span>
         ) : (
           <span className="text-white/35 text-xs font-bold tabular-nums">{rank}</span>
         )}
@@ -25,17 +25,17 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
         <img
           src={song.thumbnail}
           alt={song.title}
-          className={`w-14 h-14 rounded-2xl object-cover ${isTop ? 'ring-2 ring-amber-400/30' : 'ring-1 ring-white/10'}`}
+          className={`w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover ${isTop ? 'ring-2 ring-amber-400/30' : 'ring-1 ring-white/10'}`}
         />
         {isTop && (
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-500/90 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-lg">
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-amber-500/90 rounded-full flex items-center justify-center text-[8px] sm:text-[9px] font-bold text-white shadow-lg">
             1
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`font-semibold text-[15px] truncate ${isTop ? 'text-white' : 'text-white/92'}`}>{song.title}</p>
+        <p className={`font-semibold text-[14px] sm:text-[15px] truncate ${isTop ? 'text-white' : 'text-white/92'}`}>{song.title}</p>
         <p className="text-xs text-white/50 truncate mt-0.5">{song.artist}</p>
       </div>
 
@@ -44,7 +44,7 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
       {canDelete && (
         <button
           onClick={() => onDelete(song._id)}
-          className="glass-subtle text-white/35 hover:text-red-300 transition-colors p-2 rounded-xl flex-shrink-0"
+          className="glass-subtle text-white/35 hover:text-red-300 transition-colors p-1.5 sm:p-2 rounded-xl flex-shrink-0"
           title="Remove your song"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
