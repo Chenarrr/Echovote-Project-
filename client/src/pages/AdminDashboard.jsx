@@ -184,7 +184,10 @@ const AdminDashboard = () => {
 
   const handleAdminSearch = async (e) => {
     e.preventDefault();
-    if (!adminQuery.trim()) return;
+    if (!adminQuery.trim()) {
+      setAdminResults([]);
+      return;
+    }
     setAdminSearching(true);
     try {
       const { data } = await searchSongs(adminQuery);
@@ -195,6 +198,15 @@ const AdminDashboard = () => {
     }
     finally { setAdminSearching(false); }
   };
+
+  const clearAdminSearch = () => {
+    setAdminQuery('');
+    setAdminResults([]);
+  };
+
+  useEffect(() => {
+    if (!adminQuery.trim()) setAdminResults([]);
+  }, [adminQuery]);
 
   const handlePlayNow = async (song) => {
     setAdminAdding(song.youtubeId);
@@ -445,13 +457,29 @@ const AdminDashboard = () => {
                     <input
                       id="admin-song-search"
                       name="admin-song-search"
-                      type="text"
+                      type="search"
+                      inputMode="search"
+                      enterKeyHint="search"
                       value={adminQuery}
                       onChange={(e) => setAdminQuery(e.target.value)}
                       placeholder="Search artist or song"
                       autoComplete="off"
-                      className="w-full glass-input rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="w-full glass-input rounded-2xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/35"
                     />
+                    {adminQuery && (
+                      <button
+                        type="button"
+                        onClick={clearAdminSearch}
+                        aria-label="Clear search"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                          <path fillRule="evenodd" d="M4.28 3.22a.75.75 0 00-1.06 1.06L8.94 10l-5.72 5.72a.75.75 0 101.06 1.06L10 11.06l5.72 5.72a.75.75 0 101.06-1.06L11.06 10l5.72-5.72a.75.75 0 00-1.06-1.06L10 8.94 4.28 3.22z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   <button type="submit" disabled={adminSearching} className="glass-button text-cyan-100 rounded-2xl px-5 py-3 text-sm font-bold disabled:opacity-50 min-w-[96px]">
                     {adminSearching ? '...' : 'Search'}
