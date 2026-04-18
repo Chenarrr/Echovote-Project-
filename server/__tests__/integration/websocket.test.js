@@ -80,7 +80,7 @@ test('WS-01: client joining venue room receives subsequent broadcasts', async ()
 });
 
 // WS-02
-test('WS-02: cast_vote from client A emits update_tally to client B in same venue', async () => {
+test('WS-02: cast_vote over websocket is rejected and does not mutate tally', async () => {
   const venue = await Venue.create({ name: 'WS2', qrCodeSecret: `s-${Date.now()}` });
   const song = await Song.create({ youtubeId: 'ws2-yt', title: 'WS2', venueId: venue._id });
   await ActiveQueue.create({ songId: song._id, venueId: venue._id });
@@ -94,16 +94,20 @@ test('WS-02: cast_vote from client A emits update_tally to client B in same venu
   clientB.emit('join_venue', { venueId: venueIdStr });
   await delay(100);
 
-  const tallyPromise = waitForEvent(clientB, 'update_tally');
+  const voteErrorPromise = waitForEvent(clientA, 'vote_error');
   clientA.emit('cast_vote', {
     songId: songIdStr,
     fingerprint: 'ws2-fp',
     venueId: venueIdStr,
   });
 
-  const tally = await tallyPromise;
-  expect(tally.newCount).toBe(1);
-  expect(String(tally.songId)).toBe(songIdStr);
+  const voteError = await voteErrorPromise;
+  expect(voteError).toEqual({ error: 'Socket voting is disabled. Use the HTTP vote API.' });
+
+  await delay(100);
+  const queueEntry = await ActiveQueue.findOne({ songId: song._id, venueId: venue._id });
+  expect(queueEntry.voteCount).toBe(0);
+  expect(queueEntry.voterFingerprints).toEqual([]);
 
   clientA.disconnect();
   clientB.disconnect();

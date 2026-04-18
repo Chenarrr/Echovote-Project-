@@ -1,6 +1,3 @@
-const { castVote } = require('../services/voteController');
-const ActiveQueue = require('../models/ActiveQueue');
-
 const registerHandlers = (io) => {
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
@@ -10,12 +7,10 @@ const registerHandlers = (io) => {
       console.log(`Socket ${socket.id} joined venue:${venueId}`);
     });
 
-    socket.on('cast_vote', async ({ songId, fingerprint, venueId }) => {
-      try {
-        await castVote(songId, fingerprint, venueId);
-      } catch (err) {
-        socket.emit('vote_error', { error: err.message });
-      }
+    socket.on('cast_vote', () => {
+      // Voting is intentionally handled only via the HTTP API so the
+      // request passes through the rate limiter and the same validation path.
+      socket.emit('vote_error', { error: 'Socket voting is disabled. Use the HTTP vote API.' });
     });
 
     socket.on('progress_update', ({ venueId, currentTime, duration }) => {
