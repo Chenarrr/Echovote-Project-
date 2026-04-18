@@ -3,6 +3,7 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const compression = require('compression');
 const connectDB = require('./config/db');
 const { PORT, CLIENT_ORIGIN } = require('./config/env');
 const socketManager = require('./services/socketManager');
@@ -33,6 +34,7 @@ const io = new Server(server, {
 socketManager.init(io);
 registerHandlers(io);
 
+app.use(compression());
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
