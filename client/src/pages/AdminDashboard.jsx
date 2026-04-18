@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminSkip, adminPause, adminFilter, getAdminVenue, uploadVenueImage, deleteVenue, searchSongs, addSong, playNow, adminDeleteSong } from '../services/api';
 import useVenue from '../hooks/useVenue';
 import QRDisplay from '../components/QRDisplay';
+import Toast from '../components/Toast';
 import useSocket from '../hooks/useSocket';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -21,9 +22,22 @@ const AdminDashboard = () => {
   const [adminSearching, setAdminSearching] = useState(false);
   const [adminAdding, setAdminAdding] = useState(null);
   const [reactions, setReactions] = useState({ fire: 0, meh: 0, dislike: 0 });
+  const [toast, setToast] = useState(null);
   const playerRef = useRef(null);
   const playerInstanceRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const showToast = useCallback((message, variant = 'error') => {
+    setToast({ id: `${Date.now()}-${Math.random()}`, message, variant });
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  const getErrorMessage = useCallback((err, fallback) => {
+    return err.response?.data?.error || err.message || fallback;
+  }, []);
 
   const socket = useSocket(venueId, {
     playback_state: ({ isPlaying: p }) => {
@@ -101,7 +115,7 @@ const AdminDashboard = () => {
       const { data } = await uploadVenueImage(formData);
       setVenue((prev) => ({ ...prev, image: data.image }));
     } catch (err) {
-      alert(err.response?.data?.error || 'Upload failed');
+      showToast(getErrorMessage(err, 'Upload failed'));
     } finally {
       setUploading(false);
     }
@@ -124,12 +138,12 @@ const AdminDashboard = () => {
       localStorage.removeItem('echovote_venueId');
       navigate('/admin/login');
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete venue');
+      showToast(getErrorMessage(err, 'Failed to delete venue'));
     }
   };
 
   const handleSkip = async () => {
-    try { await adminSkip(); } catch (err) { alert(err.response?.data?.error || 'Error'); }
+    try { await adminSkip(); } catch (err) { showToast(getErrorMessage(err, 'Could not skip track')); }
   };
 
   const handlePause = async () => {
@@ -139,14 +153,14 @@ const AdminDashboard = () => {
       if (playerInstanceRef.current) {
         data.isPlaying ? playerInstanceRef.current.playVideo() : playerInstanceRef.current.pauseVideo();
       }
-    } catch (err) { alert(err.message); }
+    } catch (err) { showToast(getErrorMessage(err, 'Could not update playback')); }
   };
 
   const handleFilter = async () => {
     try {
       const { data } = await adminFilter();
       setExplicitFilter(data.explicitFilter);
-    } catch (err) { alert(err.message); }
+    } catch (err) { showToast(getErrorMessage(err, 'Could not update filter')); }
   };
 
   const handleAdminSearch = async (e) => {
@@ -156,7 +170,10 @@ const AdminDashboard = () => {
     try {
       const { data } = await searchSongs(adminQuery);
       setAdminResults(data);
-    } catch { setAdminResults([]); }
+    } catch (err) {
+      setAdminResults([]);
+      showToast(getErrorMessage(err, 'Could not search songs'));
+    }
     finally { setAdminSearching(false); }
   };
 
@@ -170,7 +187,7 @@ const AdminDashboard = () => {
       setIsPlaying(true);
       setAdminResults([]);
       setAdminQuery('');
-    } catch (err) { alert(err.response?.data?.error || 'Failed to play'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Failed to play')); }
     finally { setAdminAdding(null); }
   };
 
@@ -179,14 +196,14 @@ const AdminDashboard = () => {
     try {
       await addSong(venueId, song);
       setAdminResults((prev) => prev.filter((s) => s.youtubeId !== song.youtubeId));
-    } catch (err) { alert(err.response?.data?.error || 'Could not add song'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Could not add song')); }
     finally { setAdminAdding(null); }
   };
 
   const handleDeleteQueueSong = async (songId) => {
     try {
       await adminDeleteSong(songId);
-    } catch (err) { alert(err.response?.data?.error || 'Failed to remove song'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Failed to remove song')); }
   };
 
   const totalReactions = reactions.fire + reactions.meh + reactions.dislike;
@@ -458,6 +475,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+      <Toast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 };

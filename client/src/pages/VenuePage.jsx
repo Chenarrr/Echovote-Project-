@@ -7,6 +7,7 @@ import { getSocket } from '../services/socket';
 import SearchBar from '../components/SearchBar';
 import Leaderboard from '../components/Leaderboard';
 import NowPlaying from '../components/NowPlaying';
+import Toast from '../components/Toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -21,6 +22,19 @@ const VenuePage = () => {
     } catch { return new Set(); }
   });
   const [venue, setVenue] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, variant = 'error') => {
+    setToast({ id: `${Date.now()}-${Math.random()}`, message, variant });
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  const getErrorMessage = useCallback((err, fallback) => {
+    return err.response?.data?.error || err.message || fallback;
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(`echovote_votes_${venueId}`, JSON.stringify([...votedSongs]));
@@ -44,9 +58,9 @@ const VenuePage = () => {
       await castVote(songId, fingerprint);
       setVotedSongs((prev) => new Set([...prev, queueEntryId]));
     } catch (err) {
-      alert(err.response?.data?.error || 'Could not cast vote');
+      showToast(getErrorMessage(err, 'Could not cast vote'));
     }
-  }, [fingerprint, votedSongs]);
+  }, [fingerprint, getErrorMessage, showToast, votedSongs]);
 
   const handleUnvote = useCallback(async (queueEntryId, songId) => {
     if (!fingerprint || !votedSongs.has(queueEntryId)) return;
@@ -58,9 +72,9 @@ const VenuePage = () => {
         return next;
       });
     } catch (err) {
-      alert(err.response?.data?.error || 'Could not undo vote');
+      showToast(getErrorMessage(err, 'Could not undo vote'));
     }
-  }, [fingerprint, votedSongs]);
+  }, [fingerprint, getErrorMessage, showToast, votedSongs]);
 
   const handleReaction = useCallback((reaction) => {
     if (!fingerprint) return;
@@ -73,9 +87,9 @@ const VenuePage = () => {
     try {
       await deleteSong(venueId, songId, fingerprint);
     } catch (err) {
-      alert(err.response?.data?.error || 'Could not remove song');
+      showToast(getErrorMessage(err, 'Could not remove song'));
     }
-  }, [fingerprint, venueId]);
+  }, [fingerprint, getErrorMessage, showToast, venueId]);
 
   return (
     <div className="min-h-screen relative pb-24">
@@ -118,7 +132,7 @@ const VenuePage = () => {
         </header>
 
         <div className="px-4 pt-1 max-w-lg mx-auto">
-          <SearchBar venueId={venueId} onSongAdded={refetch} fingerprint={fingerprint} />
+          <SearchBar venueId={venueId} onSongAdded={refetch} fingerprint={fingerprint} onError={showToast} />
 
           {loading ? (
             <div className="flex flex-col items-center py-20 gap-3">
@@ -131,6 +145,7 @@ const VenuePage = () => {
         </div>
 
         <NowPlaying song={nowPlaying} progress={playbackProgress} onReaction={handleReaction} />
+        <Toast toast={toast} onDismiss={dismissToast} />
       </div>
     </div>
   );

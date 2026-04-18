@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { searchSongs, addSong } from '../services/api';
 
-const SearchBar = ({ venueId, onSongAdded, fingerprint }) => {
+const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(null);
+
+  const reportError = (err, fallback) => {
+    onError?.(err.response?.data?.error || err.message || fallback);
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -14,8 +18,9 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint }) => {
     try {
       const { data } = await searchSongs(query);
       setResults(data);
-    } catch {
+    } catch (err) {
       setResults([]);
+      reportError(err, 'Could not search songs');
     } finally {
       setLoading(false);
     }
@@ -28,7 +33,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint }) => {
       onSongAdded?.();
       setResults((prev) => prev.filter((s) => s.youtubeId !== song.youtubeId));
     } catch (err) {
-      alert(err.response?.data?.error || 'Could not add song');
+      reportError(err, 'Could not add song');
     } finally {
       setAdding(null);
     }
