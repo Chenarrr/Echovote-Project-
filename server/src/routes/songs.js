@@ -87,7 +87,7 @@ router.delete('/:venueId/:songId', async (req, res) => {
 
     if (!fingerprint) return res.status(400).json({ error: 'fingerprint is required' });
 
-    const song = await Song.findById(songId);
+    const song = await Song.findOne({ _id: songId, venueId });
     if (!song) return res.status(404).json({ error: 'Song not found' });
 
     if (song.addedBy !== fingerprint) {
@@ -95,7 +95,7 @@ router.delete('/:venueId/:songId', async (req, res) => {
     }
 
     await ActiveQueue.deleteOne({ songId: song._id, venueId });
-    await Song.deleteOne({ _id: song._id });
+    await Song.deleteOne({ _id: song._id, venueId });
 
     const queue = await ActiveQueue.find({ venueId }).populate('songId').sort({ voteCount: -1 });
     emitToVenue(venueId, 'queue_updated', { queue });

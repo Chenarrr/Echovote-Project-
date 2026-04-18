@@ -182,3 +182,27 @@ test("IT-12: DELETE /api/songs/:venueId/:songId another user's song returns 403"
   expect(res.status).toBe(403);
   expect(res.body.error).toBe('You can only remove songs you added');
 });
+
+// IT-12B
+test('IT-12B: DELETE /api/songs/:venueId/:songId cannot remove a song from another venue', async () => {
+  const venueA = await Venue.create({ name: 'V12A', qrCodeSecret: `s-a-${Date.now()}` });
+  const venueB = await Venue.create({ name: 'V12B', qrCodeSecret: `s-b-${Date.now()}` });
+
+  const addRes = await request(app)
+    .post(`/api/songs/${venueB._id}`)
+    .send({ youtubeId: 'y12b', title: 'T12B', addedBy: 'fp-shared' });
+
+  const songId = addRes.body.song._id;
+
+  const res = await request(app)
+    .delete(`/api/songs/${venueA._id}/${songId}`)
+    .send({ fingerprint: 'fp-shared' });
+
+  expect(res.status).toBe(404);
+  expect(res.body.error).toBe('Song not found');
+
+  const stillExists = await request(app).get(`/api/songs/${venueB._id}`);
+  expect(stillExists.status).toBe(200);
+  expect(stillExists.body).toHaveLength(1);
+  expect(stillExists.body[0].songId.youtubeId).toBe('y12b');
+});
