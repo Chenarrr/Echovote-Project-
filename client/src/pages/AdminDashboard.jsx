@@ -226,8 +226,8 @@ const AdminDashboard = () => {
   };
 
   const venueImageUrl = venue?.image ? `${API_URL}${venue.image}` : null;
-  const totalReactions = reactions.fire + reactions.meh + reactions.dislike;
   const visibleAdminResults = adminResults.slice(0, 6);
+  const roomStateLabel = isPlaying ? 'Room live' : 'Room paused';
 
   return (
     <div className="min-h-screen relative">
@@ -239,66 +239,109 @@ const AdminDashboard = () => {
 
       <div className="relative z-10">
         <header className="px-4 lg:px-8 pt-4">
-          <div className="max-w-6xl mx-auto glass-heavy panel-shell rounded-[22px] min-h-[72px] flex items-center justify-between px-4 py-3 float-in">
-            <div className="flex items-center gap-3 min-w-0">
-              {venueImageUrl ? (
-                <img src={venueImageUrl} alt={venue?.name} className="w-12 h-12 rounded-2xl object-cover ring-1 ring-white/20" />
-              ) : (
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(168,85,247,0.2))' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-cyan-300">
-                    <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
-                  </svg>
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/45 font-semibold">Venue</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-base font-bold text-gradient truncate">{venue?.name || 'EchoVote'}</span>
-                  <span className={`h-2 w-2 rounded-full ${isPlaying ? 'bg-emerald-400 pulse-ring' : 'bg-white/20'}`} />
+          <div className="max-w-[1400px] mx-auto glass-heavy panel-shell rounded-[30px] px-5 py-4 float-in">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                {venueImageUrl ? (
+                  <img src={venueImageUrl} alt={venue?.name} className="w-14 h-14 rounded-[22px] object-cover ring-1 ring-white/20 shadow-[0_12px_28px_rgba(0,0,0,0.22)]" />
+                ) : (
+                  <div className="w-14 h-14 rounded-[22px] flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.22)]" style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.26), rgba(45,212,191,0.18))' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-cyan-200">
+                      <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
+                    </svg>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Admin console</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
+                    <h1 className="display-type text-[1.65rem] lg:text-[1.9rem] font-semibold text-gradient tracking-tight truncate">
+                      {venue?.name || 'EchoVote'}
+                    </h1>
+                    <span className="stat-pill !px-3.5 !py-2 text-[11px]">
+                      <span className={`h-2 w-2 rounded-full ${isPlaying ? 'bg-emerald-400 pulse-ring' : 'bg-white/25'}`} />
+                      {roomStateLabel}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <input ref={fileInputRef} id="venue-image-upload" name="venue-image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="glass-subtle hover:bg-white/[0.08] text-white/70 rounded-xl px-3 py-2 text-xs font-semibold transition-all disabled:opacity-50"
-              >
-                {uploading ? 'Photo...' : 'Photo'}
-              </button>
-              <button onClick={handleLogout} className="text-xs text-white/45 hover:text-white transition-colors font-semibold">
-                Sign out
-              </button>
+              <div className="flex items-center gap-2 self-start lg:self-auto">
+                <input ref={fileInputRef} id="venue-image-upload" name="venue-image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                <button
+                  onClick={handleLogout}
+                  className="glass-subtle hover:bg-white/[0.08] text-white/75 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all"
+                >
+                  Sign out
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-5">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4 mb-4 items-stretch">
-            <div className="glass panel-shell rounded-[24px] p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-white/80">Now playing</h2>
-                <span className="stat-pill !px-3 !py-1 text-[11px]">{isPlaying ? 'Live' : 'Idle'}</span>
+        <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-5 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_340px] gap-4 items-stretch">
+            <div className="glass-heavy panel-shell rounded-[30px] p-4 lg:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Screen</p>
+                  <h2 className="display-type text-[1.28rem] font-semibold text-white mt-1">Now playing</h2>
+                </div>
+                <span className="stat-pill !px-3.5 !py-2 text-[11px]">{isPlaying ? 'Live' : 'Idle'}</span>
               </div>
-              <div ref={playerRef} className="w-full overflow-hidden rounded-[20px] glass-subtle" style={{ aspectRatio: '16 / 9' }} />
+              <div ref={playerRef} className="w-full overflow-hidden rounded-[24px] glass-subtle shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ aspectRatio: '16 / 9' }} />
+
+              <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  {activeSong?.thumbnail ? (
+                    <img
+                      src={activeSong.thumbnail}
+                      alt={activeSong.title}
+                      className="w-14 h-14 rounded-2xl object-cover ring-1 ring-white/15 shadow-[0_12px_28px_rgba(0,0,0,0.25)]"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl glass-subtle flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-cyan-200/90">
+                        <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/35 font-semibold">Current song</p>
+                    <p className="text-sm lg:text-base font-semibold text-white truncate mt-1">
+                      {activeSong?.title || 'Waiting for a track'}
+                    </p>
+                    <p className="text-xs text-white/50 truncate mt-0.5">
+                      {activeSong?.artist || 'Queue a song to start the room'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span className="stat-pill !px-3.5 !py-2 text-[11px]">{queue.length} queued</span>
+                  {reactions.fire > 0 && <span className="stat-pill !px-3.5 !py-2 text-[11px]">🔥 {reactions.fire}</span>}
+                  {reactions.meh > 0 && <span className="stat-pill !px-3.5 !py-2 text-[11px]">😐 {reactions.meh}</span>}
+                  {reactions.dislike > 0 && <span className="stat-pill !px-3.5 !py-2 text-[11px]">👎 {reactions.dislike}</span>}
+                </div>
+              </div>
             </div>
             <QRDisplay venueId={venueId} compact venueName={venue?.name} venueImage={venueImageUrl} />
           </div>
 
-          <div className="glass panel-shell rounded-[24px] p-4 mb-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-white/80">Controls</h2>
-              <span className="stat-pill !px-3 !py-1 text-[11px]">{isPlaying ? 'Playing' : 'Paused'}</span>
+          <div className="glass-heavy panel-shell rounded-[30px] p-4 lg:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Playback</p>
+                <h2 className="display-type text-[1.2rem] font-semibold text-white mt-1">Controls</h2>
+              </div>
+              <span className="stat-pill !px-3.5 !py-2 text-[11px]">{isPlaying ? 'Playing' : 'Paused'}</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={handleSkip} className="inline-flex items-center gap-2 glass-button text-cyan-100 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button onClick={handleSkip} className="inline-flex min-w-[150px] items-center justify-center gap-2 glass-button text-cyan-100 rounded-2xl px-5 py-3.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                   <path d="M15.25 5a.75.75 0 01.75.75v8.5a.75.75 0 01-1.5 0v-8.5a.75.75 0 01.75-.75zm-10.324.614a.75.75 0 011.074.066L10.5 10l-4.5 4.32a.75.75 0 11-1.04-1.08L8.42 10 4.96 6.76a.75.75 0 01.066-1.074l-.1-.072z" />
                 </svg>
                 Skip
               </button>
-              <button onClick={handlePause} className="inline-flex items-center gap-2 glass-subtle hover:bg-white/[0.08] text-white/75 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <button onClick={handlePause} className="inline-flex min-w-[150px] items-center justify-center gap-2 glass-subtle hover:bg-white/[0.08] text-white/75 rounded-2xl px-5 py-3.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
                 {isPlaying ? (
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                     <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />
@@ -310,26 +353,21 @@ const AdminDashboard = () => {
                 )}
                 {isPlaying ? 'Pause' : 'Resume'}
               </button>
-              <button onClick={handleFilter} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] ${explicitFilter ? 'glass-button text-cyan-100' : 'glass-subtle hover:bg-white/[0.08] text-white/75'}`}>
+              <button onClick={handleFilter} className={`inline-flex min-w-[170px] items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] ${explicitFilter ? 'glass-button text-cyan-100' : 'glass-subtle hover:bg-white/[0.08] text-white/75'}`}>
                 🛡️ Explicit: {explicitFilter ? 'ON' : 'OFF'}
               </button>
             </div>
-
-            {totalReactions > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {reactions.fire > 0 && <span className="stat-pill !px-3 !py-1 text-[11px]">🔥 {reactions.fire}</span>}
-                {reactions.meh > 0 && <span className="stat-pill !px-3 !py-1 text-[11px]">😐 {reactions.meh}</span>}
-                {reactions.dislike > 0 && <span className="stat-pill !px-3 !py-1 text-[11px]">👎 {reactions.dislike}</span>}
-              </div>
-            )}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] gap-4">
-            <div className="glass panel-shell rounded-[24px] p-4">
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.28fr)_minmax(0,0.96fr)] gap-4">
+            <div className="glass-heavy panel-shell rounded-[30px] p-4 lg:p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-white/80">Queue</h2>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Room</p>
+                  <h2 className="display-type text-[1.2rem] font-semibold text-white mt-1">Queue</h2>
+                </div>
                 {queue.length > 0 && (
-                  <span className="stat-pill !px-3 !py-1 text-[11px] tabular-nums">{queue.length}</span>
+                  <span className="stat-pill !px-3.5 !py-2 text-[11px] tabular-nums">{queue.length}</span>
                 )}
               </div>
               {loading ? (
@@ -339,22 +377,22 @@ const AdminDashboard = () => {
               ) : queue.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-3">🎵</div>
-                  <p className="text-white/55 text-sm font-medium">No songs</p>
+                  <p className="text-white/55 text-sm font-medium">Queue is clear</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2 max-h-[540px] overflow-y-auto pr-1">
                   {queue.map((entry, i) => {
                     const song = entry.songId || {};
                     const isTop = i === 0;
                     return (
                       <div
                         key={entry._id}
-                        className={`flex items-center gap-3 rounded-xl p-3 transition-all hover:scale-[1.005] ${isTop ? 'glass rank-gold' : 'glass-subtle hover:bg-white/[0.06]'}`}
+                        className={`flex items-center gap-3 rounded-[22px] p-3.5 transition-all hover:scale-[1.005] ${isTop ? 'glass rank-gold panel-shell' : 'glass-subtle hover:bg-white/[0.06]'}`}
                       >
                         <div className="w-6 text-center flex-shrink-0">
                           {isTop ? <span className="text-base">👑</span> : <span className="text-white/20 text-xs font-bold tabular-nums">{i + 1}</span>}
                         </div>
-                        <img src={song.thumbnail} alt={song.title} className={`w-10 h-10 rounded-lg object-cover flex-shrink-0 ${isTop ? 'ring-2 ring-amber-400/25' : 'ring-1 ring-white/10'}`} />
+                        <img src={song.thumbnail} alt={song.title} className={`w-12 h-12 rounded-2xl object-cover flex-shrink-0 ${isTop ? 'ring-2 ring-amber-400/25' : 'ring-1 ring-white/10'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate">{song.title}</p>
                           <p className="text-xs text-white/50 truncate mt-0.5">{song.artist}</p>
@@ -362,12 +400,10 @@ const AdminDashboard = () => {
                         <span className={`text-xs font-bold tabular-nums ${isTop ? 'text-amber-400' : 'text-cyan-400'}`}>{entry.voteCount}</span>
                         <button
                           onClick={() => handleDeleteQueueSong(song._id)}
-                          className="text-white/25 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+                          className="glass-subtle hover:bg-red-500/12 text-white/55 hover:text-red-300 transition-colors px-3 py-2 rounded-xl text-xs font-semibold flex-shrink-0"
                           title="Remove from queue"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                          </svg>
+                          Remove
                         </button>
                       </div>
                     );
@@ -377,11 +413,14 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="glass panel-shell rounded-[24px] p-4">
+              <div className="glass-heavy panel-shell rounded-[30px] p-4 lg:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold text-white/80">Add song</h2>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Catalog</p>
+                    <h2 className="display-type text-[1.2rem] font-semibold text-white mt-1">Add song</h2>
+                  </div>
                   {adminResults.length > 0 && (
-                    <span className="stat-pill !px-3 !py-1 text-[11px]">{visibleAdminResults.length}</span>
+                    <span className="stat-pill !px-3.5 !py-2 text-[11px]">{visibleAdminResults.length}</span>
                   )}
                 </div>
                 <form onSubmit={handleAdminSearch} className="flex gap-2">
@@ -395,20 +434,20 @@ const AdminDashboard = () => {
                       type="text"
                       value={adminQuery}
                       onChange={(e) => setAdminQuery(e.target.value)}
-                      placeholder="Search YouTube"
+                      placeholder="Search artist or song"
                       autoComplete="off"
-                      className="w-full glass-input rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
+                      className="w-full glass-input rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
                     />
                   </div>
-                  <button type="submit" disabled={adminSearching} className="glass-button text-cyan-100 rounded-xl px-5 py-3 text-sm font-bold disabled:opacity-50">
+                  <button type="submit" disabled={adminSearching} className="glass-button text-cyan-100 rounded-2xl px-5 py-3 text-sm font-bold disabled:opacity-50 min-w-[96px]">
                     {adminSearching ? '...' : 'Search'}
                   </button>
                 </form>
                 {visibleAdminResults.length > 0 && (
-                  <div className="mt-3 max-h-[360px] overflow-y-auto glass rounded-2xl divide-y divide-white/[0.05]">
+                  <div className="mt-4 max-h-[360px] overflow-y-auto glass rounded-[24px] divide-y divide-white/[0.05]">
                     {visibleAdminResults.map((song) => (
-                      <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-white/[0.05] transition-colors">
-                        <img src={song.thumbnail} alt={song.title} className="w-11 h-11 rounded-xl object-cover flex-shrink-0 ring-1 ring-white/10" />
+                      <div key={song.youtubeId} className="flex items-center gap-3 p-3.5 hover:bg-white/[0.05] transition-colors">
+                        <img src={song.thumbnail} alt={song.title} className="w-12 h-12 rounded-2xl object-cover flex-shrink-0 ring-1 ring-white/10" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <p className="text-sm font-medium text-white truncate">{song.title}</p>
@@ -420,14 +459,14 @@ const AdminDashboard = () => {
                           <button
                             onClick={() => handlePlayNow(song)}
                             disabled={adminAdding === song.youtubeId}
-                            className="text-xs glass-button text-cyan-100 rounded-lg px-3.5 py-2 font-bold disabled:opacity-50"
+                            className="text-xs glass-button text-cyan-100 rounded-xl px-3.5 py-2.5 font-bold disabled:opacity-50"
                           >
                             ▶ Play
                           </button>
                           <button
                             onClick={() => handleAddToQueue(song)}
                             disabled={adminAdding === song.youtubeId}
-                            className="text-xs glass-subtle hover:bg-white/[0.08] text-white/75 rounded-lg px-3.5 py-2 font-semibold disabled:opacity-50"
+                            className="text-xs glass-subtle hover:bg-white/[0.08] text-white/75 rounded-xl px-3.5 py-2.5 font-semibold disabled:opacity-50"
                           >
                             + Queue
                           </button>
@@ -438,19 +477,48 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-              <div className="glass panel-shell rounded-[24px] p-4">
-                <div className="flex items-center justify-between gap-3">
+              <div className="glass-heavy panel-shell rounded-[30px] p-4 lg:p-5">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold text-white/80">Venue settings</h3>
-                    <p className="text-xs text-white/45 mt-1">Delete venue and clear all data</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Brand and reset</p>
+                    <h3 className="display-type text-[1.15rem] font-semibold text-white mt-1">Venue settings</h3>
                   </div>
+                  <span className="stat-pill !px-3.5 !py-2 text-[11px]">Permanent</span>
+                </div>
+
+                <div className="mt-4 flex items-center gap-3 rounded-[22px] glass-subtle p-3.5">
+                  {venueImageUrl ? (
+                    <img src={venueImageUrl} alt={venue?.name} className="w-14 h-14 rounded-2xl object-cover ring-1 ring-white/15" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/[0.05]">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-cyan-200">
+                        <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{venue?.name || 'EchoVote'}</p>
+                    <p className="text-xs text-white/48 mt-0.5">Update logo or remove the room.</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="glass-subtle hover:bg-white/[0.08] text-white/78 rounded-2xl px-4 py-3 text-sm font-semibold transition-all disabled:opacity-50"
+                  >
+                    {uploading ? 'Updating...' : 'Change logo'}
+                  </button>
                   <button
                     onClick={handleDeleteVenue}
-                    className="rounded-xl border border-red-400/35 bg-red-500/10 px-3.5 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition-colors"
+                    className="rounded-2xl border border-red-400/35 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/20 transition-colors"
                   >
                     Delete venue
                   </button>
                 </div>
+
+                <p className="text-xs text-white/38 mt-3">Deleting the venue removes the room, queue, and admin access.</p>
               </div>
             </div>
           </div>

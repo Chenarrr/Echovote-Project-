@@ -44,8 +44,8 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
     <div className="mb-5 float-in glass-heavy panel-shell rounded-[26px] p-4 sm:p-5" style={{ animationDelay: '100ms', opacity: 0 }}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Request</p>
-          <h2 className="display-type text-[1.15rem] font-semibold text-white mt-1">Add a song</h2>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Search</p>
+          <h2 className="display-type text-[1.15rem] font-semibold text-white mt-1">Add song</h2>
         </div>
         {results.length > 0 && (
           <span className="stat-pill !px-3 !py-1 text-[11px]">{visibleResults.length}</span>
