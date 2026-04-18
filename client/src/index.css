@@ -20,18 +20,26 @@
   --panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
 }
 
+html {
+  background-color: var(--bg-deep);
+  overscroll-behavior: none;
+}
+
 body {
   min-height: 100vh;
-  background:
+  background-color: var(--bg-deep);
+  background-image:
     radial-gradient(circle at 12% 18%, rgba(45, 212, 191, 0.12), transparent 30%),
     radial-gradient(circle at 84% 18%, rgba(56, 189, 248, 0.12), transparent 32%),
     radial-gradient(circle at 50% 100%, rgba(15, 118, 110, 0.09), transparent 30%),
     linear-gradient(180deg, #0a2029 0%, var(--bg-accent) 24%, var(--bg-base) 62%, var(--bg-deep) 100%);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
 ::selection {
