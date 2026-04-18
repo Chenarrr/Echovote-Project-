@@ -24,4 +24,13 @@ const searchLimiter = rateLimit({
   message: { error: 'Too many search requests, please try again in a moment' },
 });
 
-module.exports = { voteLimiter, authLimiter, searchLimiter };
+const superAdminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  message: { error: 'Too many attempts, try again later' },
+});
+
+module.exports = { voteLimiter, authLimiter, searchLimiter, superAdminLimiter };

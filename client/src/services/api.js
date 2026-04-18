@@ -38,5 +38,7 @@ export const deleteSong = (venueId, songId, fingerprint) =>
 export const playNow = (song) => api.post('/api/admin/play-now', song);
 export const getQrCode = (venueId) =>
   `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/qr/${venueId}`;
+export const superAdminGetStats = (key) =>
+  api.post('/api/super-admin/stats', {}, { headers: { 'X-Super-Admin-Key': key } });
 
 export default api;

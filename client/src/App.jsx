@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import VenuePage from './pages/VenuePage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import SuperAdmin from './pages/SuperAdmin';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('echovote_token');
@@ -15,6 +16,7 @@ const App = () => {
       <Routes>
         <Route path="/venue/:id" element={<VenuePage />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/super-admin" element={<SuperAdmin />} />
         <Route
           path="/admin/dashboard"
           element={

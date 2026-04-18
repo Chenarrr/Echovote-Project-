@@ -110,6 +110,9 @@ The three Docker services (client, server, mongo) communicate over an internal b
 | QR Codes | qrcode (npm) |
 | File Uploads | multer |
 | Rate Limiting | express-rate-limit |
+| Security Headers | helmet |
+| Compression | gzip (nginx + express-compression) |
+| Production Web | nginx (multi-stage client build, gzip, long-lived asset caching) |
 | Containerization | Docker + Docker Compose |
 
 ---
@@ -206,11 +209,18 @@ YOUTUBE_API_KEY=your_api_key_here
 MONGO_INITDB_ROOT_USERNAME=your_mongo_username
 MONGO_INITDB_ROOT_PASSWORD=your_mongo_password
 MONGO_INITDB_DATABASE=echovote
+
+VITE_API_URL=http://localhost:3001
+VITE_SOCKET_URL=http://localhost:3001
+CLIENT_ORIGIN=http://localhost:5173
+
+# Optional — enables the /super-admin dashboard
+SUPER_ADMIN_KEY=some_long_random_string
 ```
 
 Generate secure values:
 ```bash
-# JWT secret
+# JWT secret / super admin key
 openssl rand -base64 32
 
 # MongoDB password
@@ -326,6 +336,7 @@ cd client && npx cypress open
 | `PORT` | No | Server port (default: `3001`) |
 | `CLIENT_ORIGIN` | No | CORS allowed origin (default: `http://localhost:5173`) |
 | `NODE_ENV` | No | `development` or `production` |
+| `SUPER_ADMIN_KEY` | No | Access key for the `/super-admin` dashboard. If unset, the dashboard is disabled (503). Generate with `openssl rand -base64 32`. |
 
 Client-side (set in docker-compose or `.env`):
 
@@ -353,9 +364,10 @@ Defined in `docker-compose.yml`:
 - Serves uploaded images from `/uploads` statically
 
 ### `client`
-- Built from `./client/Dockerfile`
-- Port: `5173`
-- Vite dev server with `--host` for Docker networking
+- Built from `./client/Dockerfile` (multi-stage: Node builder → nginx runtime)
+- Port: `5173` (nginx serves the prebuilt Vite bundle on port 80 internally)
+- nginx config: gzip compression, 1-year cache for hashed assets, `no-cache` for `index.html`, SPA fallback via `try_files`
+- `VITE_API_URL` / `VITE_SOCKET_URL` are injected at **build time** as Docker build args
 - Depends on `server`
 
 ---
@@ -615,6 +627,12 @@ Returns `409` if fingerprint already voted for that song.
 |---|---|---|
 | GET | `/api/qr/:venueId` | Returns a 300x300 PNG QR code pointing to `/venue/:venueId` |
 
+### Super Admin _(protected by `SUPER_ADMIN_KEY` — not a JWT)_
+
+| Method | Endpoint | Headers | Description |
+|---|---|---|---|
+| POST | `/api/super-admin/stats` | `X-Super-Admin-Key: <SUPER_ADMIN_KEY>` | Returns platform-wide counts (admins, venues, unique users, songs) and per-venue stats. Rate-limited to 5 attempts per 15 minutes per IP. Key comparison is timing-safe. |
+
 ### Health
 
 | Method | Endpoint | Description |
@@ -660,6 +678,9 @@ Guest-facing page. Shows venue name and photo in the header. Loads fingerprint o
 
 **`/admin/login` — AdminLogin**
 Three-step flow: credentials → 2FA setup (on register) or 2FA verification (on login) → dashboard redirect.
+
+**`/super-admin` — SuperAdmin**
+Private, key-gated dashboard (not linked from anywhere). Enter the `SUPER_ADMIN_KEY` value to see total admins, venues, unique users, and per-venue stats (admins, 2FA-enabled admins, queued songs, unique users). The key is sent via `X-Super-Admin-Key` header (never in the URL), compared with `crypto.timingSafeEqual`, and rate-limited to 5 attempts per 15 minutes.
 
 **`/admin/dashboard` — AdminDashboard**
 Admin control panel with:
@@ -738,6 +759,22 @@ The YouTube IFrame Player's `onStateChange` fires when a video ends (`YT.PlayerS
 - `POST /api/votes/:songId` — max 10 requests per minute per IP
 - Auth endpoints — max 20 attempts per 15 minutes per IP
 - `GET /api/songs/search` — max 20 requests per minute per IP
+- `POST /api/super-admin/*` — max 5 attempts per 15 minutes per IP
+
+**Security hardening**
+- MongoDB binds to `127.0.0.1` only — not reachable from outside the host
+- Root DB auth required (username + password via `.env`, never committed)
+- `helmet` sets security headers (HSTS, X-Content-Type-Options, Referrer-Policy, etc.)
+- JWT is required for every admin mutation; refuses to boot without `JWT_SECRET`
+- TOTP 2FA is mandatory on admin accounts (cannot be disabled from the UI)
+- Super admin key is validated with `crypto.timingSafeEqual` so the comparison leaks no information about the correct key length or prefix
+- File uploads are validated against real file bytes (not just the extension) and renamed to a server-generated name
+
+**Performance**
+- Client is served by **nginx** from a multi-stage Docker build (not the Vite dev server). Bundle is gzipped, hashed assets are cached for a year, and `index.html` is served `no-cache` so deploys always pick up the new hashes.
+- Server responses pass through `compression()` (gzip) for JSON and text payloads.
+- Socket.io still runs on the same Express server — no extra hops.
+- Result in practice: the first load is typically a single-digit number of kilobytes for hashed JS/CSS and cached on repeat visits, so navigating between pages is effectively instant.
 
 ---
 

@@ -4,6 +4,7 @@ const path = require('path');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const compression = require('compression');
+const helmet = require('helmet');
 const connectDB = require('./config/db');
 const { PORT, CLIENT_ORIGIN } = require('./config/env');
 const socketManager = require('./services/socketManager');
@@ -14,6 +15,7 @@ const songRoutes = require('./routes/songs');
 const voteRoutes = require('./routes/votes');
 const adminRoutes = require('./routes/admin');
 const qrRoutes = require('./routes/qr');
+const superAdminRoutes = require('./routes/superAdmin');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +36,10 @@ const io = new Server(server, {
 socketManager.init(io);
 registerHandlers(io);
 
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+}));
 app.use(compression());
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
@@ -44,6 +50,7 @@ app.use('/api/songs', songRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 const Venue = require('./models/Venue');
 app.get('/api/venue/:venueId', async (req, res) => {
