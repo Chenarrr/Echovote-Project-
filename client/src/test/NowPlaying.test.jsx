@@ -21,12 +21,13 @@ describe('NowPlaying', () => {
       />
     );
     expect(screen.getByText('Track Z')).toBeInTheDocument();
-    // 65s should format as 1:05; 180s as 3:00
-    expect(screen.getByText(/1:05/)).toBeInTheDocument();
-    expect(screen.getByText(/3:00/)).toBeInTheDocument();
+    // Time rendered in both mobile + desktop layouts (jsdom has no CSS media queries)
+    expect(screen.getAllByText(/1:05/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/3:00/).length).toBeGreaterThan(0);
 
-    // Click the 🔥 reaction
-    await userEvent.click(screen.getByRole('button', { name: '🔥' }));
+    // Fire the first matching reaction button (desktop emoji-only variant)
+    const fireButtons = screen.getAllByRole('button', { name: /🔥/ });
+    await userEvent.click(fireButtons[0]);
     expect(onReaction).toHaveBeenCalledWith('fire');
   });
 });

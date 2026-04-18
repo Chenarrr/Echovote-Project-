@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 
-// Mock the api module BEFORE importing SearchBar
 vi.mock('../services/api', () => ({
   searchSongs: vi.fn(),
   addSong: vi.fn(),
@@ -27,8 +26,8 @@ describe('SearchBar', () => {
     });
 
     render(<SearchBar venueId="v1" fingerprint="fp" onSongAdded={() => {}} />);
-    await userEvent.type(screen.getByPlaceholderText(/what do you wanna hear/i), 'alpha');
-    await userEvent.click(screen.getByRole('button', { name: '' })); // the search icon button has no name
+    await userEvent.type(screen.getByPlaceholderText(/search artist or song/i), 'alpha');
+    await userEvent.click(screen.getByRole('button', { name: /search/i }));
 
     await waitFor(() => expect(searchSongs).toHaveBeenCalledWith('alpha'));
     expect(await screen.findByText('Alpha Track')).toBeInTheDocument();
@@ -36,7 +35,7 @@ describe('SearchBar', () => {
   });
 
   // RTL-05
-  test('RTL-05: clicking "+ Add" calls addSong with fingerprint and removes the result from the list', async () => {
+  test('RTL-05: clicking "Add" calls addSong with fingerprint and removes the result from the list', async () => {
     searchSongs.mockResolvedValueOnce({
       data: [{ youtubeId: 'y1', title: 'OnlyOne', artist: 'A', thumbnail: 'x.jpg', isExplicit: false }],
     });
@@ -44,9 +43,9 @@ describe('SearchBar', () => {
     const onSongAdded = vi.fn();
 
     render(<SearchBar venueId="v1" fingerprint="fp-x" onSongAdded={onSongAdded} />);
-    await userEvent.type(screen.getByPlaceholderText(/what do you wanna hear/i), 'only');
-    await userEvent.click(screen.getByRole('button', { name: '' }));
-    const addBtn = await screen.findByRole('button', { name: /\+ add/i });
+    await userEvent.type(screen.getByPlaceholderText(/search artist or song/i), 'only');
+    await userEvent.click(screen.getByRole('button', { name: /search/i }));
+    const addBtn = await screen.findByRole('button', { name: /^add$/i });
     await userEvent.click(addBtn);
 
     await waitFor(() => {
@@ -57,22 +56,21 @@ describe('SearchBar', () => {
   });
 
   // RTL-06
-  test('RTL-06: addSong failure surfaces error via window.alert', async () => {
+  test('RTL-06: addSong failure surfaces error via onError callback', async () => {
     searchSongs.mockResolvedValueOnce({
       data: [{ youtubeId: 'y1', title: 'OnlyOne', artist: 'A', thumbnail: 'x.jpg', isExplicit: false }],
     });
     addSong.mockRejectedValueOnce({
       response: { data: { error: 'You can only add up to 2 songs. Remove one to add another.' } },
     });
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const onError = vi.fn();
 
-    render(<SearchBar venueId="v1" fingerprint="fp" onSongAdded={() => {}} />);
-    await userEvent.type(screen.getByPlaceholderText(/what do you wanna hear/i), 'only');
-    await userEvent.click(screen.getByRole('button', { name: '' }));
-    const addBtn = await screen.findByRole('button', { name: /\+ add/i });
+    render(<SearchBar venueId="v1" fingerprint="fp" onSongAdded={() => {}} onError={onError} />);
+    await userEvent.type(screen.getByPlaceholderText(/search artist or song/i), 'only');
+    await userEvent.click(screen.getByRole('button', { name: /search/i }));
+    const addBtn = await screen.findByRole('button', { name: /^add$/i });
     await userEvent.click(addBtn);
 
-    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(expect.stringMatching(/up to 2 songs/i)));
-    alertSpy.mockRestore();
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(expect.stringMatching(/up to 2 songs/i)));
   });
 });
