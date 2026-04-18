@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { searchSongs, addSong } from '../services/api';
 
 const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
@@ -8,13 +8,20 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
   const [adding, setAdding] = useState(null);
   const visibleResults = results.slice(0, 6);
 
+  useEffect(() => {
+    if (!query.trim()) setResults([]);
+  }, [query]);
+
   const reportError = (err, fallback) => {
     onError?.(err.response?.data?.error || err.message || fallback);
   };
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await searchSongs(query);
@@ -25,6 +32,11 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setResults([]);
   };
 
   const handleAdd = async (song) => {
@@ -60,13 +72,29 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
           <input
             id="song-search"
             name="song-search"
-            type="text"
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search artist or song"
             autoComplete="off"
-            className="w-full glass-input rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
+            autoCorrect="off"
+            spellCheck={false}
+            className="w-full glass-input rounded-2xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/35"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M4.28 3.22a.75.75 0 00-1.06 1.06L8.94 10l-5.72 5.72a.75.75 0 101.06 1.06L10 11.06l5.72 5.72a.75.75 0 101.06-1.06L11.06 10l5.72-5.72a.75.75 0 00-1.06-1.06L10 8.94 4.28 3.22z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
         </div>
         <button
           type="submit"
@@ -82,7 +110,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
       </form>
 
       {visibleResults.length > 0 && (
-        <div className="mt-4 max-h-[360px] overflow-y-auto glass rounded-[24px] divide-y divide-white/[0.05]">
+        <div className="mt-4 max-h-[280px] sm:max-h-[360px] overflow-y-auto overscroll-contain glass rounded-[24px] divide-y divide-white/[0.05] [-webkit-overflow-scrolling:touch]">
           {visibleResults.map((song, i) => (
             <div
               key={song.youtubeId}

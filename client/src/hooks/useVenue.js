@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getQueue } from '../services/api';
+import { getQueue, getVenueInfo } from '../services/api';
 import useSocket from './useSocket';
 
 const useVenue = (venueId) => {
@@ -20,7 +20,13 @@ const useVenue = (venueId) => {
   }, [venueId]);
 
   useEffect(() => {
-    if (venueId) fetchQueue();
+    if (!venueId) return;
+    fetchQueue();
+    getVenueInfo(venueId)
+      .then(({ data }) => {
+        if (data?.nowPlaying) setNowPlaying(data.nowPlaying);
+      })
+      .catch(() => {});
   }, [fetchQueue, venueId]);
 
   useSocket(venueId, {

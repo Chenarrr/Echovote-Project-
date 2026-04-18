@@ -27,7 +27,7 @@ describe('SearchBar', () => {
 
     render(<SearchBar venueId="v1" fingerprint="fp" onSongAdded={() => {}} />);
     await userEvent.type(screen.getByPlaceholderText(/search artist or song/i), 'alpha');
-    await userEvent.click(screen.getByRole('button', { name: /search/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^search$/i }));
 
     await waitFor(() => expect(searchSongs).toHaveBeenCalledWith('alpha'));
     expect(await screen.findByText('Alpha Track')).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('SearchBar', () => {
 
     render(<SearchBar venueId="v1" fingerprint="fp-x" onSongAdded={onSongAdded} />);
     await userEvent.type(screen.getByPlaceholderText(/search artist or song/i), 'only');
-    await userEvent.click(screen.getByRole('button', { name: /search/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^search$/i }));
     const addBtn = await screen.findByRole('button', { name: /^add$/i });
     await userEvent.click(addBtn);
 
@@ -67,7 +67,7 @@ describe('SearchBar', () => {
 
     render(<SearchBar venueId="v1" fingerprint="fp" onSongAdded={() => {}} onError={onError} />);
     await userEvent.type(screen.getByPlaceholderText(/search artist or song/i), 'only');
-    await userEvent.click(screen.getByRole('button', { name: /search/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^search$/i }));
     const addBtn = await screen.findByRole('button', { name: /^add$/i });
     await userEvent.click(addBtn);
 
