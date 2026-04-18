@@ -5,8 +5,11 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 const connectDB = require('./config/db');
 const { PORT, CLIENT_ORIGIN } = require('./config/env');
+const { globalLimiter } = require('./middleware/rateLimiter');
 const socketManager = require('./services/socketManager');
 const { registerHandlers } = require('./socket/handlers');
 
@@ -36,14 +39,31 @@ const io = new Server(server, {
 socketManager.init(io);
 registerHandlers(io);
 
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: false,
+  referrerPolicy: { policy: 'no-referrer' },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 app.use(compression());
-app.use(cors({ origin: allowedOrigins }));
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS blocked'));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '200kb' }));
+app.use(express.urlencoded({ extended: true, limit: '200kb' }));
+app.use(mongoSanitize());
+app.use(hpp());
+app.use(globalLimiter);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  maxAge: '7d',
+  setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/songs', songRoutes);

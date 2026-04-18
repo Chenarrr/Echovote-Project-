@@ -631,7 +631,7 @@ Returns `409` if fingerprint already voted for that song.
 
 | Method | Endpoint | Headers | Description |
 |---|---|---|---|
-| POST | `/api/super-admin/stats` | `X-Super-Admin-Key: <SUPER_ADMIN_KEY>` | Returns platform-wide counts (admins, venues, unique users, songs) and per-venue stats. Rate-limited to 5 attempts per 15 minutes per IP. Key comparison is timing-safe. |
+| POST | `/api/super-admin/stats` | `X-Super-Admin-Key: <SUPER_ADMIN_KEY>` | Returns platform-wide counts (admins, venues, unique users, songs) and per-venue stats. Rate-limited to **3 failed attempts per 15 minutes per IP** (successful unlocks don't consume the budget). Key comparison is timing-safe on padded buffers, the key must be ≥32 chars, and every attempt is audit-logged. |
 
 ### Health
 
@@ -680,7 +680,7 @@ Guest-facing page. Shows venue name and photo in the header. Loads fingerprint o
 Three-step flow: credentials → 2FA setup (on register) or 2FA verification (on login) → dashboard redirect.
 
 **`/super-admin` — SuperAdmin**
-Private, key-gated dashboard (not linked from anywhere). Enter the `SUPER_ADMIN_KEY` value to see total admins, venues, unique users, and per-venue stats (admins, 2FA-enabled admins, queued songs, unique users). The key is sent via `X-Super-Admin-Key` header (never in the URL), compared with `crypto.timingSafeEqual`, and rate-limited to 5 attempts per 15 minutes.
+Private, key-gated dashboard (not linked from anywhere). Enter the `SUPER_ADMIN_KEY` value to see total admins, venues, unique users, and per-venue stats (admins, 2FA-enabled admins, queued songs, unique users). The key is sent via `X-Super-Admin-Key` header (never in the URL or request body), compared with `crypto.timingSafeEqual` on padded buffers, required to be ≥32 characters, and rate-limited to **3 failed attempts per 15 minutes** per IP. Every attempt is audit-logged.
 
 **`/admin/dashboard` — AdminDashboard**
 Admin control panel with:
@@ -756,19 +756,30 @@ The YouTube IFrame Player's `onStateChange` fires when a video ends (`YT.PlayerS
 
 **Rate limiting**
 `express-rate-limit` is applied to:
+- Global — max 300 requests per minute per IP (catch-all floor)
 - `POST /api/votes/:songId` — max 10 requests per minute per IP
 - Auth endpoints — max 20 attempts per 15 minutes per IP
 - `GET /api/songs/search` — max 20 requests per minute per IP
-- `POST /api/super-admin/*` — max 5 attempts per 15 minutes per IP
+- `POST /api/super-admin/*` — **max 3 failed attempts per 15 minutes per IP** (successful requests don't consume the budget)
 
 **Security hardening**
 - MongoDB binds to `127.0.0.1` only — not reachable from outside the host
 - Root DB auth required (username + password via `.env`, never committed)
-- `helmet` sets security headers (HSTS, X-Content-Type-Options, Referrer-Policy, etc.)
+- `helmet` sets strict security headers: HSTS (1 yr, `includeSubDomains`, `preload`), `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`
+- `express-mongo-sanitize` strips `$` and `.` from request payloads (blocks NoSQL operator injection)
+- `hpp` removes duplicate query parameters (blocks HTTP Parameter Pollution)
+- `express.json({ limit: '200kb' })` caps payload size to stop large-body DoS
+- `x-powered-by` header disabled; `trust proxy: 1` so rate limits use the real client IP behind nginx
+- CORS allowlist is a strict callback (null origin for curl is allowed, everything else is rejected — no wildcard)
 - JWT is required for every admin mutation; refuses to boot without `JWT_SECRET`
 - TOTP 2FA is mandatory on admin accounts (cannot be disabled from the UI)
-- Super admin key is validated with `crypto.timingSafeEqual` so the comparison leaks no information about the correct key length or prefix
+- **Super admin:**
+  - Key must be ≥ 32 characters or the endpoint refuses to serve (503). Short keys are logged as a startup warning, never accepted
+  - Key is compared with `crypto.timingSafeEqual` on **padded buffers**, so the comparison leaks no information about the correct key length or prefix
+  - Key is only read from the `X-Super-Admin-Key` header — never from the URL or body (so it never appears in access logs)
+  - Every granted AND denied attempt is audit-logged with IP + user-agent
 - File uploads are validated against real file bytes (not just the extension) and renamed to a server-generated name
+- Static `/uploads` served with `X-Content-Type-Options: nosniff` and a 7-day cache
 
 **Performance**
 - Client is served by **nginx** from a multi-stage Docker build (not the Vite dev server). Bundle is gzipped, hashed assets are cached for a year, and `index.html` is served `no-cache` so deploys always pick up the new hashes.

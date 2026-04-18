@@ -26,11 +26,19 @@ const searchLimiter = rateLimit({
 
 const superAdminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 3,
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false,
+  skipSuccessfulRequests: true,
   message: { error: 'Too many attempts, try again later' },
 });
 
-module.exports = { voteLimiter, authLimiter, searchLimiter, superAdminLimiter };
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' },
+});
+
+module.exports = { voteLimiter, authLimiter, searchLimiter, superAdminLimiter, globalLimiter };
