@@ -1,4 +1,3 @@
-import React from 'react';
 import VoteButton from './VoteButton';
 
 const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete }) => {
