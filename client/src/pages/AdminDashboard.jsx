@@ -10,6 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const venueId = localStorage.getItem('echovote_venueId');
+  const adminToken = localStorage.getItem('echovote_token');
   const { queue, nowPlaying, loading } = useVenue(venueId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [explicitFilter, setExplicitFilter] = useState(false);
@@ -79,16 +80,16 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (playerInstanceRef.current && socket) {
+      if (playerInstanceRef.current && socket && adminToken) {
         const currentTime = playerInstanceRef.current.getCurrentTime?.();
         const duration = playerInstanceRef.current.getDuration?.();
         if (currentTime != null && duration) {
-          socket.emit('progress_update', { venueId, currentTime, duration });
+          socket.emit('progress_update', { venueId, currentTime, duration, token: adminToken });
         }
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [venueId, socket]);
+  }, [adminToken, venueId, socket]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];

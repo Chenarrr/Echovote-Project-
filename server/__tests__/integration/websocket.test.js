@@ -6,10 +6,12 @@ const express = require('express');
 const request = require('supertest');
 const { Server } = require('socket.io');
 const { io: Client } = require('socket.io-client');
+const jwt = require('jsonwebtoken');
 
 const { connect, close, clear } = require('../helpers/db');
 const socketManager = require('../../src/services/socketManager');
 const { registerHandlers } = require('../../src/socket/handlers');
+const { JWT_SECRET } = require('../../src/config/env');
 
 const Venue = require('../../src/models/Venue');
 const Song = require('../../src/models/Song');
@@ -144,7 +146,9 @@ test('WS-03: adding a song via API emits queue_updated to all venue clients', as
 
 // WS-04
 test('WS-04: progress_update from admin emits playback_progress to other venue clients', async () => {
-  const venueId = 'ws-venue-04';
+  const venue = await Venue.create({ name: 'WS4', qrCodeSecret: `s-${Date.now()}` });
+  const venueId = venue._id.toString();
+  const token = jwt.sign({ adminId: 'admin-ws-04', venueId }, JWT_SECRET, { expiresIn: '1h' });
 
   const clientAdmin = await connectClient();
   const clientGuest = await connectClient();
@@ -154,7 +158,7 @@ test('WS-04: progress_update from admin emits playback_progress to other venue c
   await delay(100);
 
   const progressPromise = waitForEvent(clientGuest, 'playback_progress');
-  clientAdmin.emit('progress_update', { venueId, currentTime: 42, duration: 180 });
+  clientAdmin.emit('progress_update', { venueId, currentTime: 42, duration: 180, token });
 
   const received = await progressPromise;
   expect(received).toEqual({ currentTime: 42, duration: 180 });
@@ -164,7 +168,29 @@ test('WS-04: progress_update from admin emits playback_progress to other venue c
 });
 
 // WS-05
-test('WS-05: song_reaction broadcast reaches all clients in venue room', async () => {
+test('WS-05: progress_update without a valid admin token is rejected', async () => {
+  const venue = await Venue.create({ name: 'WS5', qrCodeSecret: `s-${Date.now()}` });
+  const venueId = venue._id.toString();
+
+  const clientGuest = await connectClient();
+  const clientIntruder = await connectClient();
+
+  clientGuest.emit('join_venue', { venueId });
+  clientIntruder.emit('join_venue', { venueId });
+  await delay(100);
+
+  const progressErrorPromise = waitForEvent(clientIntruder, 'progress_error');
+  clientIntruder.emit('progress_update', { venueId, currentTime: 99, duration: 180, token: 'bad-token' });
+
+  const error = await progressErrorPromise;
+  expect(error).toEqual({ error: 'Unauthorized progress update' });
+
+  clientGuest.disconnect();
+  clientIntruder.disconnect();
+});
+
+// WS-06
+test('WS-06: song_reaction broadcast reaches all clients in venue room', async () => {
   const venueId = 'ws-venue-05';
 
   const clientA = await connectClient();

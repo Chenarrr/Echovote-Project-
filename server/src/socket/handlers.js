@@ -1,3 +1,6 @@
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/env');
+
 const registerHandlers = (io) => {
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
@@ -13,7 +16,17 @@ const registerHandlers = (io) => {
       socket.emit('vote_error', { error: 'Socket voting is disabled. Use the HTTP vote API.' });
     });
 
-    socket.on('progress_update', ({ venueId, currentTime, duration }) => {
+    socket.on('progress_update', ({ venueId, currentTime, duration, token }) => {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (!decoded?.venueId || String(decoded.venueId) !== String(venueId)) {
+          throw new Error('Token venue mismatch');
+        }
+      } catch {
+        socket.emit('progress_error', { error: 'Unauthorized progress update' });
+        return;
+      }
+
       socket.to(`venue:${venueId}`).emit('playback_progress', { currentTime, duration });
     });
 
