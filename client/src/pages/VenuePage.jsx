@@ -88,7 +88,7 @@ const VenuePage = () => {
       <div className="relative z-10">
         {/* Header */}
         <header className="px-4 pt-5 pb-4">
-          <div className="max-w-lg mx-auto glass-heavy rounded-2xl px-4 py-3 flex items-center justify-between float-in">
+          <div className="max-w-lg mx-auto glass-heavy panel-shell rounded-[26px] px-4 py-3 flex items-center justify-between float-in">
             <div className="flex items-center gap-3">
               {venue?.image ? (
                 <img
@@ -107,7 +107,7 @@ const VenuePage = () => {
                 <h1 className="text-base font-bold text-gradient tracking-tight">
                   {venue?.name || 'EchoVote'}
                 </h1>
-                <p className="text-white/35 text-[11px] mt-0.5">Request songs, vote for vibes</p>
+                <p className="text-white/50 text-[11px] mt-0.5">Request songs, vote for vibes</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">

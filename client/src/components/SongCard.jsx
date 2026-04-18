@@ -8,8 +8,8 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl p-3 transition-all hover:scale-[1.01] float-in ${
-        isTop ? 'glass rank-gold' : 'glass hover:bg-white/[0.08]'
+      className={`flex items-center gap-3 rounded-2xl p-3.5 transition-all hover:scale-[1.01] float-in ${
+        isTop ? 'glass rank-gold panel-shell' : 'glass panel-shell hover:bg-white/[0.08]'
       }`}
       style={{ animationDelay: `${(rank - 1) * 60}ms`, opacity: 0 }}
     >
@@ -18,7 +18,7 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
         {isTop ? (
           <span className="text-lg" title="Top voted">👑</span>
         ) : (
-          <span className="text-white/25 text-xs font-bold tabular-nums">{rank}</span>
+          <span className="text-white/35 text-xs font-bold tabular-nums">{rank}</span>
         )}
       </div>
 
@@ -39,7 +39,7 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className={`font-semibold text-sm truncate ${isTop ? 'text-white' : 'text-white/90'}`}>{song.title}</p>
-        <p className="text-xs text-white/35 truncate mt-0.5">{song.artist}</p>
+        <p className="text-xs text-white/50 truncate mt-0.5">{song.artist}</p>
       </div>
 
       {/* Vote */}
@@ -49,7 +49,7 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
       {canDelete && (
         <button
           onClick={() => onDelete(song._id)}
-          className="text-white/20 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+          className="text-white/25 hover:text-red-400 transition-colors p-1 flex-shrink-0"
           title="Remove your song"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">

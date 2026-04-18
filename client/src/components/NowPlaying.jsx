@@ -58,10 +58,13 @@ const NowPlaying = ({ song, progress = {}, onReaction }) => {
             <p className="text-[10px] text-cyan-400/80 font-bold uppercase tracking-widest">Playing</p>
           </div>
           <p className="text-sm font-semibold text-white truncate mt-0.5">{song.title}</p>
+          {song.artist && (
+            <p className="text-[11px] text-white/55 truncate mt-0.5">{song.artist}</p>
+          )}
         </div>
 
         {duration > 0 && (
-          <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0 font-medium">
+          <span className="text-[11px] text-white/45 tabular-nums flex-shrink-0 font-medium">
             {formatTime(currentTime)}<span className="text-white/15"> / </span>{formatTime(duration)}
           </span>
         )}
