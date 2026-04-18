@@ -41,9 +41,12 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
   };
 
   return (
-    <div className="mb-5 float-in glass-heavy panel-shell rounded-[24px] p-3.5 sm:p-4" style={{ animationDelay: '100ms', opacity: 0 }}>
+    <div className="mb-5 float-in glass-heavy panel-shell rounded-[26px] p-4 sm:p-5" style={{ animationDelay: '100ms', opacity: 0 }}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-white/80">Add song</h2>
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Request</p>
+          <h2 className="display-type text-[1.15rem] font-semibold text-white mt-1">Add a song</h2>
+        </div>
         {results.length > 0 && (
           <span className="stat-pill !px-3 !py-1 text-[11px]">{visibleResults.length}</span>
         )}
@@ -60,7 +63,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search song or artist"
+            placeholder="Search artist or song"
             autoComplete="off"
             className="w-full glass-input rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
           />
@@ -79,17 +82,17 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
       </form>
 
       {visibleResults.length > 0 && (
-        <div className="mt-3 max-h-[360px] overflow-y-auto glass rounded-2xl divide-y divide-white/[0.05]">
+        <div className="mt-4 max-h-[360px] overflow-y-auto glass rounded-[24px] divide-y divide-white/[0.05]">
           {visibleResults.map((song, i) => (
             <div
               key={song.youtubeId}
-              className="flex items-center gap-3 p-3 hover:bg-white/[0.05] transition-colors float-in"
+              className="flex items-center gap-3 p-3.5 hover:bg-white/[0.05] transition-colors float-in"
               style={{ animationDelay: `${i * 40}ms`, opacity: 0 }}
             >
-              <img src={song.thumbnail} alt={song.title} className="w-11 h-11 rounded-xl object-cover flex-shrink-0 ring-1 ring-white/10" />
+              <img src={song.thumbnail} alt={song.title} className="w-12 h-12 rounded-2xl object-cover flex-shrink-0 ring-1 ring-white/10" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-white truncate">{song.title}</p>
+                  <p className="text-sm font-medium text-white/95 truncate">{song.title}</p>
                   {song.isExplicit && (
                     <span className="flex-shrink-0 text-[9px] font-bold bg-white/10 text-white/55 rounded px-1 py-0.5 uppercase">E</span>
                   )}
@@ -99,7 +102,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
               <button
                 onClick={() => handleAdd(song)}
                 disabled={adding === song.youtubeId}
-                className="text-xs font-bold text-cyan-100 glass-button rounded-xl px-3.5 py-2 disabled:opacity-50 flex-shrink-0"
+                className="text-xs font-bold text-cyan-100 glass-button rounded-2xl px-4 py-2.5 disabled:opacity-50 flex-shrink-0"
               >
                 {adding === song.youtubeId ? '...' : 'Add'}
               </button>

@@ -17,13 +17,13 @@ const VoteButton = ({ count, voted, onClick, onUnvote, disabled, isTop }) => {
     <button
       onClick={handleClick}
       disabled={disabled}
-      className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-bold transition-all ${popping ? 'vote-pop' : ''}
+      className={`flex items-center gap-1.5 rounded-2xl px-3.5 py-2.5 text-sm font-bold transition-all ${popping ? 'vote-pop' : ''}
         ${voted
           ? 'text-cyan-300 hover:bg-red-500/15 hover:text-red-400 active:scale-95'
           : 'text-white/40 hover:text-cyan-300 active:scale-95'
         }
         ${voted
-          ? 'bg-cyan-400/15 border border-cyan-400/25 shadow-[0_0_12px_rgba(6,182,212,0.2)]'
+          ? 'bg-cyan-400/15 border border-cyan-400/25 shadow-[0_0_12px_rgba(34,211,238,0.2)]'
           : 'glass-subtle hover:border-cyan-500/20'
         }
         ${disabled ? 'opacity-40 cursor-not-allowed' : ''}

@@ -14,7 +14,7 @@ const Leaderboard = ({ queue, votedSongs, onVote, onUnvote, fingerprint, onDelet
   return (
     <div>
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-sm font-semibold text-white/80">Queue</h2>
+        <h2 className="display-type text-[1.12rem] font-semibold text-white">Queue</h2>
         <span className="stat-pill !px-3 !py-1 text-[11px] tabular-nums">{queue.length}</span>
       </div>
       <div className="flex flex-col gap-2">

@@ -8,12 +8,11 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl p-3.5 transition-all hover:scale-[1.01] float-in ${
+      className={`flex items-center gap-3 rounded-[24px] p-4 transition-all hover:scale-[1.01] float-in ${
         isTop ? 'glass rank-gold panel-shell' : 'glass panel-shell hover:bg-white/[0.08]'
       }`}
       style={{ animationDelay: `${(rank - 1) * 60}ms`, opacity: 0 }}
     >
-      {/* Rank */}
       <div className="flex-shrink-0 w-7 text-center">
         {isTop ? (
           <span className="text-lg" title="Top voted">👑</span>
@@ -22,12 +21,11 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
         )}
       </div>
 
-      {/* Thumbnail */}
       <div className="relative flex-shrink-0">
         <img
           src={song.thumbnail}
           alt={song.title}
-          className={`w-12 h-12 rounded-xl object-cover ${isTop ? 'ring-2 ring-amber-400/30' : 'ring-1 ring-white/10'}`}
+          className={`w-14 h-14 rounded-2xl object-cover ${isTop ? 'ring-2 ring-amber-400/30' : 'ring-1 ring-white/10'}`}
         />
         {isTop && (
           <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-500/90 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-lg">
@@ -36,20 +34,17 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
         )}
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className={`font-semibold text-sm truncate ${isTop ? 'text-white' : 'text-white/90'}`}>{song.title}</p>
+        <p className={`font-semibold text-[15px] truncate ${isTop ? 'text-white' : 'text-white/92'}`}>{song.title}</p>
         <p className="text-xs text-white/50 truncate mt-0.5">{song.artist}</p>
       </div>
 
-      {/* Vote */}
       <VoteButton count={voteCount} voted={voted} onClick={() => onVote(entry._id, song._id)} onUnvote={() => onUnvote(entry._id, song._id)} isTop={isTop} />
 
-      {/* Delete */}
       {canDelete && (
         <button
           onClick={() => onDelete(song._id)}
-          className="text-white/25 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+          className="glass-subtle text-white/35 hover:text-red-300 transition-colors p-2 rounded-xl flex-shrink-0"
           title="Remove your song"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">

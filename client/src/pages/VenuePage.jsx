@@ -91,6 +91,8 @@ const VenuePage = () => {
     }
   }, [fingerprint, getErrorMessage, showToast, venueId]);
 
+  const venueImageUrl = venue?.image ? `${API_URL}${venue.image}` : null;
+
   return (
     <div className="min-h-screen relative pb-24">
       <div className="ambient-bg">
@@ -101,35 +103,36 @@ const VenuePage = () => {
 
       <div className="relative z-10">
         <header className="px-4 pt-4 pb-3">
-          <div className="max-w-lg mx-auto glass-heavy panel-shell rounded-[22px] px-4 py-3 flex items-center justify-between float-in">
+          <div className="max-w-xl mx-auto glass-heavy panel-shell rounded-[24px] px-4 py-3.5 flex items-center justify-between float-in">
             <div className="flex items-center gap-3">
-              {venue?.image ? (
+              {venueImageUrl ? (
                 <img
-                  src={`${API_URL}${venue.image}`}
+                  src={venueImageUrl}
                   alt={venue.name}
-                  className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10"
+                  className="w-12 h-12 rounded-2xl object-cover ring-1 ring-white/20"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(168,85,247,0.2))' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-cyan-400">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.2), rgba(45,212,191,0.18))' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-cyan-200">
                     <path d="M19.952 1.651a.75.75 0 01.298.599V16.303a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.403-4.909l2.311-.66a1.5 1.5 0 001.088-1.442V6.994l-9 2.572v9.737a3 3 0 01-2.176 2.884l-1.32.377a2.553 2.553 0 11-1.402-4.909l2.31-.66a1.5 1.5 0 001.088-1.442V5.25a.75.75 0 01.544-.721l10.5-3a.75.75 0 01.658.122z" />
                   </svg>
                 </div>
               )}
               <div className="min-w-0">
-                <h1 className="text-base font-bold text-gradient tracking-tight">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Live room</p>
+                <h1 className="display-type text-[1.35rem] font-semibold text-gradient tracking-tight mt-0.5">
                   {venue?.name || 'EchoVote'}
                 </h1>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1.5">
               <span className="w-2 h-2 bg-emerald-400 rounded-full pulse-ring" />
-              <span className="text-[10px] text-emerald-400/90 font-semibold">LIVE</span>
+              <span className="text-[10px] text-emerald-400/90 font-semibold uppercase tracking-[0.2em]">Vote</span>
             </div>
           </div>
         </header>
 
-        <div className="px-4 pt-1 max-w-lg mx-auto">
+        <div className="px-4 pt-1 max-w-xl mx-auto">
           <SearchBar venueId={venueId} onSongAdded={refetch} fingerprint={fingerprint} onError={showToast} />
 
           {loading ? (
