@@ -285,7 +285,14 @@ const AdminDashboard = () => {
                   <p className="text-[10px] uppercase tracking-[0.22em] text-white/42 font-semibold">Screen</p>
                   <h2 className="display-type text-[1.28rem] font-semibold text-white mt-1">Now playing</h2>
                 </div>
-                <span className="stat-pill !px-3.5 !py-2 text-[11px]">{isPlaying ? 'Live' : 'Idle'}</span>
+                {isPlaying ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white" style={{ background: 'rgba(239,68,68,0.22)', border: '1px solid rgba(239,68,68,0.38)', boxShadow: '0 0 12px rgba(239,68,68,0.25)' }}>
+                    <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                    Live
+                  </span>
+                ) : (
+                  <span className="stat-pill !px-3.5 !py-2 text-[11px]">Idle</span>
+                )}
               </div>
               <div ref={playerRef} className="w-full overflow-hidden rounded-[24px] glass-subtle shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" style={{ aspectRatio: '16 / 9' }} />
 
@@ -317,9 +324,17 @@ const AdminDashboard = () => {
 
                 <div className="flex flex-wrap gap-2">
                   <span className="stat-pill !px-3.5 !py-2 text-[11px]">{queue.length} queued</span>
-                  {reactions.fire > 0 && <span className="stat-pill !px-3.5 !py-2 text-[11px]">🔥 {reactions.fire}</span>}
-                  {reactions.meh > 0 && <span className="stat-pill !px-3.5 !py-2 text-[11px]">😐 {reactions.meh}</span>}
-                  {reactions.dislike > 0 && <span className="stat-pill !px-3.5 !py-2 text-[11px]">👎 {reactions.dislike}</span>}
+                  <div className="flex items-center gap-1.5 glass-subtle rounded-2xl px-3 py-1.5">
+                    <span className="text-[10px] uppercase tracking-[0.18em] text-white/35 font-semibold mr-1">Crowd</span>
+                    {[['🔥', 'fire'], ['😐', 'meh'], ['👎', 'dislike']].map(([emoji, key]) => (
+                      <span
+                        key={key}
+                        className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold transition-all ${reactions[key] > 0 ? 'bg-white/10 text-white scale-105' : 'text-white/30'}`}
+                      >
+                        {emoji} <span className="tabular-nums">{reactions[key]}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
