@@ -25,13 +25,8 @@ const SongCard = ({ entry, rank, voted, onVote, onUnvote, canDelete, onDelete })
         <img
           src={song.thumbnail}
           alt={song.title}
-          className={`w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover ${isTop ? 'ring-2 ring-amber-400/30' : 'ring-1 ring-white/10'}`}
+          className={`w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover ${isTop ? 'ring-2 ring-amber-400/40' : 'ring-1 ring-white/10'}`}
         />
-        {isTop && (
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-amber-500/90 rounded-full flex items-center justify-center text-[8px] sm:text-[9px] font-bold text-white shadow-lg">
-            1
-          </div>
-        )}
       </div>
 
       <div className="flex-1 min-w-0">
