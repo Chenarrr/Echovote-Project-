@@ -6,8 +6,7 @@ const Leaderboard = ({ queue, votedSongs, onVote, onUnvote, fingerprint, onDelet
     return (
       <div className="text-center py-20 float-in glass rounded-[28px] panel-shell">
         <div className="text-5xl mb-4">🎵</div>
-        <p className="text-white/70 text-base font-semibold">The stage is empty</p>
-        <p className="text-white/45 text-sm mt-1.5">Search for a song above and get the party started</p>
+        <p className="text-white/70 text-base font-semibold">No songs yet</p>
       </div>
     );
   }
@@ -15,13 +14,8 @@ const Leaderboard = ({ queue, votedSongs, onVote, onUnvote, fingerprint, onDelet
   return (
     <div>
       <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xs font-bold text-white/60 uppercase tracking-widest">Up Next</h2>
-          <div className="h-px w-8 bg-gradient-to-r from-cyan-500/30 to-transparent" />
-        </div>
-        <span className="stat-pill !px-3 !py-1.5 text-[11px] tabular-nums">
-          {queue.length} {queue.length === 1 ? 'track' : 'tracks'} queued
-        </span>
+        <h2 className="text-sm font-semibold text-white/80">Queue</h2>
+        <span className="stat-pill !px-3 !py-1 text-[11px] tabular-nums">{queue.length}</span>
       </div>
       <div className="flex flex-col gap-2">
         {queue.map((entry, i) => {

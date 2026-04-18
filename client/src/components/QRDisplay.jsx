@@ -5,19 +5,17 @@ const QRDisplay = ({ venueId, compact }) => {
   if (!venueId) return null;
 
   return (
-    <div className={`flex flex-col items-center gap-3 glass panel-shell rounded-[28px] ${compact ? 'p-4' : 'p-6'}`}>
-      <p className="section-kicker">Share Access</p>
-      <h2 className="section-heading text-center">{compact ? 'Vote here' : 'Scan to vote'}</h2>
+    <div className={`flex flex-col items-center glass panel-shell rounded-[24px] ${compact ? 'gap-3 p-4' : 'gap-4 p-5'}`}>
+      <h2 className="text-sm font-semibold text-white/80 text-center">
+        {compact ? 'Scan' : 'Scan to vote'}
+      </h2>
       <div className="bg-white rounded-2xl p-3 shadow-[0_0_30px_rgba(6,182,212,0.12)]">
         <img
           src={getQrCode(venueId)}
           alt="QR Code"
-          className={compact ? 'w-32 h-32' : 'w-44 h-44'}
+          className={compact ? 'w-32 h-32' : 'w-40 h-40'}
         />
       </div>
-      <p className="text-[11px] text-white/45 text-center max-w-[220px]">
-        Share this code so your crowd can request and vote for songs
-      </p>
     </div>
   );
 };

@@ -6,6 +6,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(null);
+  const visibleResults = results.slice(0, 6);
 
   const reportError = (err, fallback) => {
     onError?.(err.response?.data?.error || err.message || fallback);
@@ -40,16 +41,12 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
   };
 
   return (
-    <div className="mb-6 float-in glass-heavy panel-shell rounded-[28px] p-4 sm:p-5" style={{ animationDelay: '100ms', opacity: 0 }}>
-      <div className="mb-4">
-        <p className="section-kicker">Crowd Control</p>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="section-heading">Pick the next track</h2>
-            <p className="section-copy mt-1">Search YouTube, add a song, then let the room decide what climbs.</p>
-          </div>
-          <span className="stat-pill">Live requests</span>
-        </div>
+    <div className="mb-5 float-in glass-heavy panel-shell rounded-[24px] p-3.5 sm:p-4" style={{ animationDelay: '100ms', opacity: 0 }}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-white/80">Add song</h2>
+        {results.length > 0 && (
+          <span className="stat-pill !px-3 !py-1 text-[11px]">{visibleResults.length}</span>
+        )}
       </div>
 
       <form onSubmit={handleSearch} className="flex gap-2">
@@ -63,7 +60,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by song, artist, or mood"
+            placeholder="Search song or artist"
             autoComplete="off"
             className="w-full glass-input rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
           />
@@ -71,7 +68,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
         <button
           type="submit"
           disabled={loading}
-          className="glass-button text-cyan-100 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-50 min-w-[98px]"
+          className="glass-button text-cyan-100 rounded-2xl px-4 py-3 text-sm font-bold disabled:opacity-50 min-w-[92px]"
         >
           {loading ? (
             <div className="mx-auto w-4 h-4 border-2 border-cyan-100/30 border-t-cyan-100 rounded-full animate-spin" />
@@ -81,11 +78,9 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
         </button>
       </form>
 
-      <p className="fine-print mt-3">Fast add, low friction, and no app install for guests.</p>
-
-      {results.length > 0 && (
-        <div className="mt-4 glass rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
-          {results.map((song, i) => (
+      {visibleResults.length > 0 && (
+        <div className="mt-3 max-h-[360px] overflow-y-auto glass rounded-2xl divide-y divide-white/[0.05]">
+          {visibleResults.map((song, i) => (
             <div
               key={song.youtubeId}
               className="flex items-center gap-3 p-3 hover:bg-white/[0.05] transition-colors float-in"
@@ -106,7 +101,7 @@ const SearchBar = ({ venueId, onSongAdded, fingerprint, onError }) => {
                 disabled={adding === song.youtubeId}
                 className="text-xs font-bold text-cyan-100 glass-button rounded-xl px-3.5 py-2 disabled:opacity-50 flex-shrink-0"
               >
-                {adding === song.youtubeId ? '...' : '+ Add'}
+                {adding === song.youtubeId ? '...' : 'Add'}
               </button>
             </div>
           ))}

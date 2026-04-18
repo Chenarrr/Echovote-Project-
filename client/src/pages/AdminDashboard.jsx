@@ -207,6 +207,7 @@ const AdminDashboard = () => {
   };
 
   const totalReactions = reactions.fire + reactions.meh + reactions.dislike;
+  const visibleAdminResults = adminResults.slice(0, 6);
 
   return (
     <div className="min-h-screen relative">
@@ -217,10 +218,9 @@ const AdminDashboard = () => {
       </div>
 
       <div className="relative z-10">
-        {/* Top bar */}
         <header className="px-4 lg:px-8 pt-4">
-          <div className="max-w-6xl mx-auto glass-heavy panel-shell rounded-[24px] min-h-[64px] flex items-center justify-between px-5 py-3 float-in">
-            <div className="flex items-center gap-3">
+          <div className="max-w-6xl mx-auto glass-heavy panel-shell rounded-[22px] min-h-[60px] flex items-center justify-between px-4 py-3 float-in">
+            <div className="flex items-center gap-3 min-w-0">
               {venue?.image ? (
                 <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/10" />
               ) : (
@@ -230,77 +230,45 @@ const AdminDashboard = () => {
                   </svg>
                 </div>
               )}
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-sm font-bold text-gradient">{venue?.name || 'EchoVote'}</span>
-                  <span className="text-white/10">·</span>
-                  <span className="text-xs text-white/50 font-medium">Dashboard</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gradient truncate">{venue?.name || 'EchoVote'}</span>
+                  <span className={`h-2 w-2 rounded-full ${isPlaying ? 'bg-emerald-400' : 'bg-white/20'}`} />
                 </div>
-                <span className="text-[11px] text-white/45">Run the room, queue the next song, and keep the crowd moving.</span>
               </div>
             </div>
-            <button onClick={handleLogout} className="text-xs text-white/45 hover:text-white transition-colors font-semibold">
-              Sign out
-            </button>
+            <div className="flex items-center gap-2">
+              <input ref={fileInputRef} id="venue-image-upload" name="venue-image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="glass-subtle hover:bg-white/[0.08] text-white/70 rounded-xl px-3 py-2 text-xs font-semibold transition-all disabled:opacity-50"
+              >
+                {uploading ? 'Photo...' : 'Photo'}
+              </button>
+              <button onClick={handleLogout} className="text-xs text-white/45 hover:text-white transition-colors font-semibold">
+                Sign out
+              </button>
+            </div>
           </div>
         </header>
 
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
-          {/* Venue Image */}
-          <div className="glass panel-shell rounded-[28px] p-5 mb-5 float-in">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="section-kicker">Venue Identity</p>
-                <h2 className="section-heading mt-2">Front-of-house details</h2>
-                <p className="section-copy mt-1">A strong photo and QR placement make the guest page feel trustworthy instantly.</p>
-              </div>
-              <span className="stat-pill">Guest-facing</span>
-            </div>
-            <div className="flex items-center gap-4">
-              {venue?.image ? (
-                <img src={`${API_URL}${venue.image}`} alt={venue?.name} className="w-20 h-20 rounded-2xl object-cover ring-1 ring-white/10" />
-              ) : (
-                <div className="w-20 h-20 glass-subtle rounded-2xl flex items-center justify-center border border-dashed border-white/15">
-                  <span className="text-3xl">📷</span>
-                </div>
-              )}
-              <div>
-                <input ref={fileInputRef} id="venue-image-upload" name="venue-image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="glass-subtle hover:bg-white/[0.08] text-white/75 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
-                >
-                  {uploading ? 'Uploading...' : venue?.image ? 'Change photo' : 'Upload photo'}
-                </button>
-                <p className="fine-print mt-1.5">JPG, PNG, GIF, or WebP up to 5MB. Shown to guests on the voting page.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Player + QR */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
-            <div className="lg:col-span-2 glass panel-shell rounded-[28px] p-4" style={{ minHeight: 280 }}>
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 py-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-4 mb-4">
+            <div className="glass panel-shell rounded-[24px] p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="section-kicker">Playback</p>
-                  <h2 className="section-heading mt-2">Now playing monitor</h2>
-                </div>
-                <span className="stat-pill">{nowPlaying ? 'Live song loaded' : 'Waiting for track'}</span>
+                <h2 className="text-sm font-semibold text-white/80">Now playing</h2>
+                <span className="stat-pill !px-3 !py-1 text-[11px]">{isPlaying ? 'Live' : 'Idle'}</span>
               </div>
-              <div ref={playerRef} className="w-full overflow-hidden rounded-[22px] glass-subtle" style={{ minHeight: 280 }} />
+              <div ref={playerRef} className="w-full overflow-hidden rounded-[20px] glass-subtle" style={{ aspectRatio: '16 / 9' }} />
             </div>
-            <QRDisplay venueId={venueId} />
+            <QRDisplay venueId={venueId} compact />
           </div>
 
-          {/* Controls */}
-          <div className="glass panel-shell rounded-[28px] p-5 mb-5">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="section-kicker">Controls</p>
-                <h2 className="section-heading mt-2">Playback actions</h2>
-              </div>
-              <span className="stat-pill">{isPlaying ? 'Playing live' : 'Paused / idle'}</span>
+          <div className="glass panel-shell rounded-[24px] p-4 mb-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-white/80">Controls</h2>
+              <span className="stat-pill !px-3 !py-1 text-[11px]">{isPlaying ? 'Playing' : 'Paused'}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={handleSkip} className="inline-flex items-center gap-2 glass-button text-cyan-100 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
@@ -327,26 +295,19 @@ const AdminDashboard = () => {
             </div>
 
             {totalReactions > 0 && (
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/[0.06]">
-                <span className="text-xs text-white/55 font-semibold">Crowd vibes:</span>
-                <div className="flex gap-3">
-                  {reactions.fire > 0 && <span className="text-sm">🔥 <span className="text-xs text-white/60 font-bold">{reactions.fire}</span></span>}
-                  {reactions.meh > 0 && <span className="text-sm">😐 <span className="text-xs text-white/60 font-bold">{reactions.meh}</span></span>}
-                  {reactions.dislike > 0 && <span className="text-sm">👎 <span className="text-xs text-white/60 font-bold">{reactions.dislike}</span></span>}
-                </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {reactions.fire > 0 && <span className="stat-pill !px-3 !py-1 text-[11px]">🔥 {reactions.fire}</span>}
+                {reactions.meh > 0 && <span className="stat-pill !px-3 !py-1 text-[11px]">😐 {reactions.meh}</span>}
+                {reactions.dislike > 0 && <span className="stat-pill !px-3 !py-1 text-[11px]">👎 {reactions.dislike}</span>}
               </div>
             )}
           </div>
 
-          {/* Live Queue */}
-          <div className="glass panel-shell rounded-[28px] p-5 mb-5">
+          <div className="glass panel-shell rounded-[24px] p-4 mb-4">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold text-white/55 uppercase tracking-widest">Live Queue</h2>
-                <div className="h-px w-8 bg-gradient-to-r from-cyan-500/30 to-transparent" />
-              </div>
+              <h2 className="text-sm font-semibold text-white/80">Queue</h2>
               {queue.length > 0 && (
-                <span className="stat-pill !px-3 !py-1.5 text-[11px] tabular-nums">{queue.length} {queue.length === 1 ? 'track' : 'tracks'}</span>
+                <span className="stat-pill !px-3 !py-1 text-[11px] tabular-nums">{queue.length}</span>
               )}
             </div>
             {loading ? (
@@ -356,7 +317,7 @@ const AdminDashboard = () => {
             ) : queue.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-4xl mb-3">🎵</div>
-                <p className="text-white/55 text-sm font-medium">Queue's empty — waiting for requests</p>
+                <p className="text-white/55 text-sm font-medium">No songs</p>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
@@ -393,15 +354,12 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          {/* Admin Search */}
-          <div className="glass panel-shell rounded-[28px] p-5 mb-5">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="section-kicker">Song Control</p>
-                <h2 className="section-heading mt-2">Play now or queue for later</h2>
-                <p className="section-copy mt-1">Keep the set moving without losing the crowd’s picks.</p>
-              </div>
-              <span className="stat-pill">Admin search</span>
+          <div className="glass panel-shell rounded-[24px] p-4 mb-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-white/80">Add song</h2>
+              {adminResults.length > 0 && (
+                <span className="stat-pill !px-3 !py-1 text-[11px]">{visibleAdminResults.length}</span>
+              )}
             </div>
             <form onSubmit={handleAdminSearch} className="flex gap-2">
               <div className="flex-1 relative">
@@ -414,7 +372,7 @@ const AdminDashboard = () => {
                   type="text"
                   value={adminQuery}
                   onChange={(e) => setAdminQuery(e.target.value)}
-                  placeholder="What are we playing?"
+                  placeholder="Search YouTube"
                   autoComplete="off"
                   className="w-full glass-input rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/35"
                 />
@@ -423,9 +381,9 @@ const AdminDashboard = () => {
                 {adminSearching ? '...' : 'Search'}
               </button>
             </form>
-            {adminResults.length > 0 && (
-              <div className="mt-2 glass rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
-                {adminResults.map((song) => (
+            {visibleAdminResults.length > 0 && (
+              <div className="mt-3 max-h-[360px] overflow-y-auto glass rounded-2xl divide-y divide-white/[0.05]">
+                {visibleAdminResults.map((song) => (
                   <div key={song.youtubeId} className="flex items-center gap-3 p-3 hover:bg-white/[0.05] transition-colors">
                     <img src={song.thumbnail} alt={song.title} className="w-11 h-11 rounded-xl object-cover flex-shrink-0 ring-1 ring-white/10" />
                     <div className="flex-1 min-w-0">
@@ -457,21 +415,13 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          {/* Danger Zone */}
-          <div className="glass panel-shell rounded-[28px] p-5" style={{ borderColor: 'rgba(239,68,68,0.15)' }}>
-            <h2 className="text-xs font-bold text-red-400/70 uppercase tracking-widest mb-3">Danger Zone</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white/70">Delete this venue</p>
-                <p className="text-xs text-white/45 mt-0.5">Permanently deletes the venue, your account, all songs, and the queue.</p>
-              </div>
-              <button
-                onClick={handleDeleteVenue}
-                className="bg-red-600/10 hover:bg-red-600 border border-red-600/30 text-red-400 hover:text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-all"
-              >
-                Delete venue
-              </button>
-            </div>
+          <div className="flex justify-end">
+            <button
+              onClick={handleDeleteVenue}
+              className="text-xs text-red-400/65 hover:text-red-300 transition-colors font-semibold"
+            >
+              Delete venue
+            </button>
           </div>
         </div>
       </div>
