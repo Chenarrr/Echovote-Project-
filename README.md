@@ -8,14 +8,14 @@ Built with a **glass-inspired UI** — translucent panels, ambient gradients, an
 
 ## Status
 
-![tests](https://img.shields.io/badge/tests-144%20passing-brightgreen)
-![server](https://img.shields.io/badge/server-132%20Jest-brightgreen)
+![tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
+![server](https://img.shields.io/badge/server-141%20Jest-brightgreen)
 ![client](https://img.shields.io/badge/client-12%20Vitest%20%2B%20RTL-brightgreen)
 ![e2e](https://img.shields.io/badge/e2e-8%20Cypress%20specs-blue)
 ![race-safe](https://img.shields.io/badge/vote%20path-race--safe-brightgreen)
 ![2FA](https://img.shields.io/badge/auth-JWT%20%2B%20TOTP%202FA-blue)
 
-**Production-ready**: 144 automated tests (Unit · Integration · WebSocket · EP · BVA · Decision Table · State Transition · API Contract · Concurrency · Security · Error-Path · Socket Reconnection · React Component), hardened auth path, atomic race-safe vote controller, graceful failure handling. See [TESTS.md](./TESTS.md) for the full breakdown.
+**Production-ready**: 153 automated tests (Unit · Integration · WebSocket · EP · BVA · Decision Table · State Transition · API Contract · Concurrency · Security · Error-Path · Socket Reconnection · React Component), hardened auth path, atomic race-safe vote controller, graceful failure handling. See [TESTS.md](./TESTS.md) for the full breakdown.
 
 ---
 
@@ -260,15 +260,15 @@ Guests scan the QR code from their phone and land on the voting page — no app 
 
 ## Testing
 
-EchoVote ships with a **144-test automated suite** covering every layer from individual functions to full user flows. See [TESTS.md](./TESTS.md) for the per-test breakdown, categories, and full rationale.
+EchoVote ships with a **153-test automated suite** covering every layer from individual functions to full user flows. See [TESTS.md](./TESTS.md) for the per-test breakdown, categories, and full rationale.
 
 ### Test matrix
 
 | Layer                       | Tool                                     | Count | Runtime | Status  |
 |-----------------------------|------------------------------------------|-------|---------|---------|
-| Unit                        | Jest 30                                  | 24    | < 1s    | PASS    |
-| API Integration             | Jest + Supertest + mongodb-memory-server | 18    | ~3s     | PASS    |
-| WebSocket                   | Real Socket.IO server + client           | 5     | ~1s     | PASS    |
+| Unit                        | Jest 30                                  | 26    | < 1s    | PASS    |
+| API Integration             | Jest + Supertest + mongodb-memory-server | 24    | ~4s     | PASS    |
+| WebSocket                   | Real Socket.IO server + client           | 6     | ~1s     | PASS    |
 | Equivalence Partitioning    | Jest + Supertest                         | 18    | ~1s     | PASS    |
 | Boundary Value Analysis     | Jest + express-rate-limit                | 14    | ~1s     | PASS    |
 | Decision Table              | Jest + mocked rate limiter state         | 8     | ~1s     | PASS    |
@@ -280,12 +280,12 @@ EchoVote ships with a **144-test automated suite** covering every layer from ind
 | Socket Reconnection         | Real Socket.IO + forced disconnect       | 3     | ~1s     | PASS    |
 | React Component             | Vitest 2 + React Testing Library + jsdom | 12    | ~1s     | PASS    |
 | End-to-End (browser)        | Cypress 15                               | 8     | manual  | WRITTEN |
-| **Executed total**          |                                          | **144** | **~27s** | **PASS** |
+| **Executed total**          |                                          | **153** | **~37s** | **PASS** |
 
 ### Commands
 
 ```bash
-# Server test suite (132 Jest tests)
+# Server test suite (141 Jest tests)
 cd server
 npm test                                    # all tests, sequential
 npx jest __tests__/unit --runInBand         # just unit

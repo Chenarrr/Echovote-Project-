@@ -1,14 +1,16 @@
 # EchoVote — Test Results
 
-**Run date:** 2026-04-09  
+**Run date:** 2026-04-18  
 **Framework:** Jest 30 + Supertest + socket.io-client + mongodb-memory-server + Vitest 2 + React Testing Library + Cypress 15  
 **Commands:**
 - Server: `npm test` from `/server` (`jest --runInBand`)
 - Client: `npm test` from `/client` (`vitest run`)
 - E2E: `npm run dev` in `/client` + `npx cypress run` (manual)
 
-**Overall Result: 144 / 144 executed tests PASSED** (132 server Jest + 12 client Vitest)  
+**Overall Result: 153 / 153 executed tests PASSED** (141 server Jest + 12 client Vitest)  
 **Cypress E2E:** 8 specs WRITTEN but NOT EXECUTED (see §5 for honest disclosure)
+
+> **Note:** Suite counts below reflect current totals. Per-test ID tables document the core set of cases; additional tests have been added over time in the `unit/models.test.js`, `unit/rateLimiter.test.js`, `unit/voteController.test.js`, `integration/*.test.js`, and `integration/websocket.test.js` files without a new dedicated ID. The totals in the summary table are authoritative.
 
 ---
 
@@ -16,9 +18,9 @@
 
 | Category                               | Tests | Passed | Failed | Executed? |
 |----------------------------------------|-------|--------|--------|-----------|
-| Unit Tests                             | 24    | 24     | 0      | YES       |
-| API Integration Tests                  | 18    | 18     | 0      | YES       |
-| WebSocket Tests                        | 5     | 5      | 0      | YES       |
+| Unit Tests                             | 26    | 26     | 0      | YES       |
+| API Integration Tests                  | 24    | 24     | 0      | YES       |
+| WebSocket Tests                        | 6     | 6      | 0      | YES       |
 | Equivalence Partitioning (EP)          | 18    | 18     | 0      | YES       |
 | Boundary Value Analysis (BVA)          | 14    | 14     | 0      | YES       |
 | Decision Table (DT)                    | 8     | 8      | 0      | YES       |
@@ -28,12 +30,56 @@
 | Security / Negative Auth               | 6     | 6      | 0      | YES       |
 | Error Paths                            | 6     | 6      | 0      | YES       |
 | Socket Reconnection                    | 3     | 3      | 0      | YES       |
-| **Server Jest subtotal**               | **132**| **132**| **0** |           |
+| **Server Jest subtotal**               | **141**| **141**| **0** |           |
 | Client component (Vitest + RTL)        | 12    | 12     | 0      | YES       |
 | E2E Cypress                            | 8     | —      | —      | **NO**    |
-| **Grand total (executed)**             | **144**| **144**| **0** |           |
+| **Grand total (executed)**             | **153**| **153**| **0** |           |
 
-Server Jest runtime: ~26s. Client Vitest runtime: ~1s.
+Server Jest runtime: ~36s. Client Vitest runtime: ~1s.
+
+### Per-suite test counts (from `jest --listTests`)
+
+| File | Count |
+|------|------:|
+| `__tests__/unit/authMiddleware.test.js`       | 3  |
+| `__tests__/unit/models.test.js`               | 10 |
+| `__tests__/unit/rateLimiter.test.js`          | 6  |
+| `__tests__/unit/voteController.test.js`       | 6  |
+| `__tests__/unit/youtubeService.test.js`       | 1  |
+| `__tests__/integration/admin.test.js`         | 5  |
+| `__tests__/integration/auth.test.js`          | 6  |
+| `__tests__/integration/songs.test.js`         | 9  |
+| `__tests__/integration/votes.test.js`         | 4  |
+| `__tests__/integration/websocket.test.js`     | 6  |
+| `__tests__/integration/socketReconnect.test.js` | 3 |
+| `__tests__/ep/equivalencePartitioning.test.js`| 18 |
+| `__tests__/bva/boundaryValueAnalysis.test.js` | 14 |
+| `__tests__/dt/decisionTable.test.js`          | 8  |
+| `__tests__/stt/stateTransition.test.js`       | 11 |
+| `__tests__/contract/apiContract.test.js`      | 16 |
+| `__tests__/race/concurrency.test.js`          | 3  |
+| `__tests__/security/negativeAuth.test.js`     | 6  |
+| `__tests__/errors/errorPaths.test.js`         | 6  |
+| **Server Jest total**                         | **141** |
+
+### Client component tests (`client/src/test/`)
+
+| File | Count |
+|------|------:|
+| `SearchBar.test.jsx`   | 3  |
+| `Leaderboard.test.jsx` | 2  |
+| `NowPlaying.test.jsx`  | 2  |
+| `SongCard.test.jsx`    | 2  |
+| `VoteButton.test.jsx`  | 3  |
+| **Client total**       | **12** |
+
+### 2026-04-18 — Client test selector refresh
+
+The 6 RTL tests under `client/src/test/` that reference component copy were updated after an earlier UI redesign changed the text they asserted on. No component logic was touched — only test selectors were refreshed:
+
+- `SearchBar`: placeholder is now `"Search artist or song"`; search button has name `"Search"`; add button name is `"Add"` (not `"+ Add"`). `RTL-06` was migrated from `window.alert` to the new `onError` callback prop that `SearchBar` emits today.
+- `Leaderboard`: empty state is `"No songs yet"`; the queue count is rendered as a `stat-pill` next to the "Queue" header (the `"N tracks queued"` label was removed in the glass redesign).
+- `NowPlaying`: the component now renders both desktop (emoji-only) and mobile (emoji + label) reaction buttons; in jsdom both render because CSS media queries are not applied, so the test clicks the first matching `🔥` button and matches times via `getAllByText`.
 
 ---
 
