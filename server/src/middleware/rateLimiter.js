@@ -25,12 +25,12 @@ const searchLimiter = rateLimit({
 });
 
 const superAdminLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 3,
+  windowMs: 60 * 1000,
+  max: 1,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  message: { error: 'Too many attempts, try again later' },
+  message: { error: 'Too many attempts, try again in a minute' },
 });
 
 const globalLimiter = rateLimit({

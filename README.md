@@ -6,6 +6,19 @@ Built with a **glass-inspired UI** — translucent panels, ambient gradients, an
 
 ---
 
+## Preview
+
+**Admin console — live room, now-playing, QR, vote reactions**
+![Admin console with live QR and phone queue](docs/screenshots/admin-dashboard.png)
+
+**Queue + catalog on desktop, mirrored on the phone in real time**
+![Admin queue and phone voter](docs/screenshots/admin-catalog.png)
+
+**Super admin dashboard** _(key-gated, unlinked — screenshot coming)_
+![Super admin dashboard placeholder](docs/screenshots/super-admin.png)
+
+---
+
 ## Status
 
 ![tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
@@ -631,7 +644,7 @@ Returns `409` if fingerprint already voted for that song.
 
 | Method | Endpoint | Headers | Description |
 |---|---|---|---|
-| POST | `/api/super-admin/stats` | `X-Super-Admin-Key: <SUPER_ADMIN_KEY>` | Returns platform-wide counts (admins, venues, unique users, songs) and per-venue stats. Rate-limited to **3 failed attempts per 15 minutes per IP** (successful unlocks don't consume the budget). Key comparison is timing-safe on padded buffers, the key must be ≥32 chars, and every attempt is audit-logged. |
+| POST | `/api/super-admin/stats` | `X-Super-Admin-Key: <SUPER_ADMIN_KEY>` | Returns platform-wide counts (admins, venues, unique users, songs) and per-venue stats. Rate-limited to **1 failed attempt per minute per IP** (successful unlocks don't consume the budget). Key comparison is timing-safe on padded buffers, the key must be ≥32 chars, and every attempt is audit-logged. |
 
 ### Health
 
@@ -680,7 +693,7 @@ Guest-facing page. Shows venue name and photo in the header. Loads fingerprint o
 Three-step flow: credentials → 2FA setup (on register) or 2FA verification (on login) → dashboard redirect.
 
 **`/super-admin` — SuperAdmin**
-Private, key-gated dashboard (not linked from anywhere). Enter the `SUPER_ADMIN_KEY` value to see total admins, venues, unique users, and per-venue stats (admins, 2FA-enabled admins, queued songs, unique users). The key is sent via `X-Super-Admin-Key` header (never in the URL or request body), compared with `crypto.timingSafeEqual` on padded buffers, required to be ≥32 characters, and rate-limited to **3 failed attempts per 15 minutes** per IP. Every attempt is audit-logged.
+Private, key-gated dashboard (not linked from anywhere). Enter the `SUPER_ADMIN_KEY` value to see total admins, venues, unique users, and per-venue stats (admins, 2FA-enabled admins, queued songs, unique users). The key is sent via `X-Super-Admin-Key` header (never in the URL or request body), compared with `crypto.timingSafeEqual` on padded buffers, required to be ≥32 characters, and rate-limited to **1 failed attempt per minute** per IP. Every attempt is audit-logged.
 
 **`/admin/dashboard` — AdminDashboard**
 Admin control panel with:
@@ -760,7 +773,7 @@ The YouTube IFrame Player's `onStateChange` fires when a video ends (`YT.PlayerS
 - `POST /api/votes/:songId` — max 10 requests per minute per IP
 - Auth endpoints — max 20 attempts per 15 minutes per IP
 - `GET /api/songs/search` — max 20 requests per minute per IP
-- `POST /api/super-admin/*` — **max 3 failed attempts per 15 minutes per IP** (successful requests don't consume the budget)
+- `POST /api/super-admin/*` — **max 1 failed attempt per minute per IP** (successful requests don't consume the budget)
 
 **Security hardening**
 - MongoDB binds to `127.0.0.1` only — not reachable from outside the host
@@ -888,3 +901,4 @@ CLIENT_ORIGIN=https://your-app.vercel.app
 ```
 
 Once set correctly, the QR code works from any phone on any network — no same-WiFi requirement.
+ent.
