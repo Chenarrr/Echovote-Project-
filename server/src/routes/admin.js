@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const authMiddleware = require('../middleware/auth');
 const PlaybackState = require('../models/PlaybackState');
 const ActiveQueue = require('../models/ActiveQueue');
@@ -10,14 +11,7 @@ const Venue = require('../models/Venue');
 const { emitToVenue } = require('../services/socketManager');
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '../../uploads'),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `venue-${Date.now()}${ext}`);
-  },
-});
+const UPLOAD_DIR = path.join(__dirname, '../../uploads');
 
 const fileFilter = (req, file, cb) => {
   if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
@@ -27,7 +21,71 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+const detectImageType = (buffer) => {
+  if (!buffer || buffer.length < 12) return null;
+
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return { ext: 'jpg', mime: 'image/jpeg' };
+  }
+
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return { ext: 'png', mime: 'image/png' };
+  }
+
+  if (
+    buffer.toString('ascii', 0, 6) === 'GIF87a' ||
+    buffer.toString('ascii', 0, 6) === 'GIF89a'
+  ) {
+    return { ext: 'gif', mime: 'image/gif' };
+  }
+
+  if (
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return { ext: 'webp', mime: 'image/webp' };
+  }
+
+  return null;
+};
+
+const uploadSingleImage = (req, res) =>
+  new Promise((resolve, reject) => {
+    upload.single('image')(req, res, (err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+
+const saveValidatedImage = async (file) => {
+  const detectedType = detectImageType(file?.buffer);
+  if (!detectedType) {
+    throw new Error('Uploaded file content is not a supported image');
+  }
+
+  await fs.promises.mkdir(UPLOAD_DIR, { recursive: true });
+
+  const filename = `venue-${Date.now()}-${crypto.randomUUID()}.${detectedType.ext}`;
+  const absolutePath = path.join(UPLOAD_DIR, filename);
+  await fs.promises.writeFile(absolutePath, file.buffer);
+
+  return `/uploads/${filename}`;
+};
 
 const router = express.Router();
 
@@ -112,14 +170,31 @@ router.post('/seed', async (req, res) => {
   }
 });
 
-router.post('/venue-image', upload.single('image'), async (req, res) => {
+router.post('/venue-image', async (req, res) => {
   try {
+    await uploadSingleImage(req, res);
+
     const { venueId } = req.admin;
     if (!req.file) return res.status(400).json({ error: 'No image file provided' });
-    const imagePath = `/uploads/${req.file.filename}`;
+    const imagePath = await saveValidatedImage(req.file);
     const venue = await Venue.findByIdAndUpdate(venueId, { image: imagePath }, { new: true });
+    if (!venue) {
+      await fs.promises.rm(path.join(UPLOAD_DIR, path.basename(imagePath)), { force: true });
+      return res.status(404).json({ error: 'Venue not found' });
+    }
+
     res.json({ image: venue.image });
   } catch (err) {
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Image file is too large. Max size is 5MB.' });
+    }
+    if (
+      err.message === 'Only image files (JPEG, PNG, WebP, GIF) are allowed' ||
+      err.message === 'Uploaded file content is not a supported image'
+    ) {
+      return res.status(400).json({ error: err.message });
+    }
+
     res.status(500).json({ error: err.message });
   }
 });
