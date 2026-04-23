@@ -4,3 +4,9 @@ dist/
 .DS_Store
 .superpowers/
 .claude/
+.vscode/
+server/uploads/*.png
+server/uploads/*.jpg
+server/uploads/*.jpeg
+server/uploads/*.gif
+server/uploads/*.webp
