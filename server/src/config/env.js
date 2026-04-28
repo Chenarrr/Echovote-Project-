@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../../.env') });
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const JWT_SECRET =
